@@ -3,446 +3,701 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Link & Life | 專屬連結收藏</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Comfortaa:wght@500;700&display=swap" rel="stylesheet">
+    <title>智慧連結導航站 | Family Link Intelligence Portal</title>
+    <!-- 引入與妳健康網頁相同風格的 Font Awesome 圖示 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* --- 完全忠實還原圖一的配色與 Neo-Brutalism 粗黑框風格 --- */
         :root {
-            --bg-color: #fff9f6;
-            --card-bg: #ffffff;
-            --primary-color: #ff826e;
-            --secondary-color: #fdd5bd;
-            --text-main: #4a3a35;
-            --text-sub: #8c736a;
-            --accent-purple: #bc84ee;
-            --radius: 20px;
-            --shadow: 0 10px 25px rgba(255, 130, 110, 0.1);
+            --bg-main: #f4eee1;          /* 溫暖明亮的米色背景 */
+            --bg-card: #ffffff;          /* 純白卡片背景 */
+            --bg-sidebar: #fcfbfa;       /* 側邊欄微白背景 */
+            --border-color: #000000;     /* 經典厚黑邊框 */
+            --border-thick: 2px;
+            --radius-main: 16px;
+            --radius-card: 12px;
+            --orange-accent: #ff826e;    /* 妳最愛的珊瑚橘裝飾線 */
+            --green-btn: #1b5e20;        /* 頂部同步按鈕的森林綠 */
+            --text-dark: #1a1a1a;
+            --text-muted: #555555;
         }
 
         * {
             box-sizing: border-box;
-            font-family: 'Noto Sans TC', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            background-color: var(--bg-main);
+            color: var(--text-dark);
             margin: 0;
             padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            padding-bottom: 70px; /* 幫底部導航留空間 */
         }
 
-        /* --- Header 區塊 --- */
-        header {
-            width: 100%;
-            max-width: 800px;
-            padding: 40px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        .profile-section {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .avatar {
-            width: 80px;
-            height: 80px;
-            background: var(--secondary-color);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            color: white;
-            border: 4px solid white;
-            box-shadow: var(--shadow);
-        }
-
-        .user-info h1 {
-            font-family: 'Comfortaa', cursive;
-            margin: 0;
-            font-size: 28px;
-        }
-
-        .stats {
-            display: flex;
-            gap: 20px;
-            margin-top: 10px;
-            color: var(--text-sub);
-            font-size: 14px;
-        }
-
-        /* --- 輸入表單 --- */
-        .input-card {
-            background: var(--card-bg);
-            width: 90%;
-            max-width: 600px;
-            padding: 30px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 40px;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--text-sub);
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #f0f0f0;
-            border-radius: 12px;
-            font-size: 16px;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        input:focus { border-color: var(--primary-color); }
-
-        .row-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .btn-add {
-            width: 100%;
-            padding: 15px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-top: 10px;
-        }
-
-        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 130, 110, 0.4); }
-
-        /* --- 分類標籤 --- */
-        .filter-bar {
-            width: 90%;
-            max-width: 800px;
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding: 10px 5px;
-            margin-bottom: 20px;
-        }
-
-        .filter-btn {
-            padding: 8px 20px;
-            background: white;
-            border: 2px solid var(--secondary-color);
-            border-radius: 50px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: 0.3s;
-            font-weight: 500;
-        }
-
-        .filter-btn.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        /* --- 展示區 (卡片牆) --- */
-        .gallery {
-            width: 90%;
-            max-width: 1000px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px;
-            padding-bottom: 50px;
-        }
-
-        .item-card {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            transition: 0.3s;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        .item-card:hover { transform: translateY(-5px); }
-
-        .card-img {
-            width: 100%;
-            height: 150px;
-            background: var(--secondary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 50px;
-            color: white;
-        }
-
-        .card-content {
-            padding: 20px;
-        }
-
-        .card-category {
-            font-size: 12px;
-            color: var(--primary-color);
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .card-notes {
-            font-size: 14px;
-            color: var(--text-sub);
-            background: #fff9f6;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            line-height: 1.5;
-        }
-
-        .card-footer {
-            margin-top: auto;
+        /* --- 頂部標題與歡迎列 --- */
+        .top-navbar {
+            background-color: var(--bg-main);
+            padding: 15px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: var(--border-thick) solid var(--border-color);
         }
 
-        .link-btn {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 700;
+        .brand-title h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .brand-title p {
+            margin: 3px 0 0 0;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .sync-btn {
+            background-color: var(--green-btn);
+            color: white;
+            border: var(--border-thick) solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        .welcome-banner {
+            background-color: #eae1cc;
+            margin: 15px 30px;
+            padding: 12px 20px;
+            border: var(--border-thick) solid var(--border-color);
+            border-radius: var(--radius-card);
+            display: flex;
+            align-items: center;
+            gap: 10px;
             font-size: 14px;
+            font-weight: 500;
         }
 
-        .delete-btn {
-            background: none;
-            border: none;
-            color: #ffcccc;
+        .welcome-banner i {
+            font-size: 18px;
+            color: #666;
+        }
+
+        /* --- 三欄式黃金主版面 --- */
+        .main-container {
+            display: grid;
+            grid-template-columns: 240px 300px 1fr;
+            gap: 20px;
+            padding: 0 30px;
+            align-items: start;
+        }
+
+        /* 共通區塊外框樣式 */
+        .panel-box {
+            background-color: var(--bg-card);
+            border: var(--border-thick) solid var(--border-color);
+            border-radius: var(--radius-main);
+            padding: 20px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.05);
+        }
+
+        /* 區塊標題 */
+        .panel-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 4px;
+        }
+        .panel-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        /* --- 1. 左側欄：管理導航 --- */
+        .nav-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: 0.3s;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
         }
 
-        .delete-btn:hover { color: #ff5e5e; }
+        .nav-item:hover, .nav-item.active {
+            background-color: #eae1cc;
+        }
 
-        /* 分類管理小按鈕 */
-        .manage-cat {
+        .nav-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item-left i {
+            width: 16px;
+            text-align: center;
+        }
+
+        .nav-divider {
+            border-top: 1px solid #ddd;
+            margin: 15px 0;
+        }
+
+        .action-btn-outline {
+            width: 100%;
+            background: white;
+            border: var(--border-thick) solid var(--border-color);
+            padding: 10px;
+            border-radius: var(--radius-card);
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .action-btn-outline:hover { background: #f9f9f9; }
+
+        .action-btn-dark {
+            width: 100%;
+            background: #000000;
+            color: white;
+            border: var(--border-thick) solid var(--border-color);
+            padding: 10px;
+            border-radius: var(--radius-card);
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .action-btn-dark:hover { background: #222; }
+
+        /* --- 2. 中間欄：新增表單 --- */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            border: var(--border-thick) solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            background-color: #fafafa;
+            outline: none;
+        }
+        .form-control:focus { background-color: #fff; }
+
+        .btn-submit-block {
+            width: 100%;
+            background-color: #000000;
+            color: white;
+            border: var(--border-thick) solid var(--border-color);
+            border-radius: 25px;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .btn-submit-block p { margin: 2px 0 0 0; font-size: 10px; color: #ccc; font-weight: normal; }
+
+        /* --- 3. 右側欄：展示牆區 --- */
+        .gallery-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .tag-tab {
+            background-color: white;
+            border: var(--border-thick) solid var(--border-color);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .tag-tab.active {
+            background-color: #000000;
+            color: white;
+        }
+
+        /* 卡片網格 */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        /* 經典卡片本體：帶有橘色裝飾線條感 */
+        .link-card {
+            background-color: #fdf5e6; /* 帶有溫暖淡色質感的卡片底面 */
+            border: var(--border-thick) solid var(--border-color);
+            border-radius: var(--radius-card);
+            box-shadow: 4px 4px 0px var(--orange-accent); /* 圖一亮眼的橘色立體陰影線 */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .link-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px var(--orange-accent);
+        }
+
+        /* 封面圖片展示區域 */
+        .card-cover {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            border-bottom: var(--border-thick) solid var(--border-color);
+        }
+
+        .card-body {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .card-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .card-main-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .card-loc-tag {
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+
+        /* 備註與小說資訊小對話框 */
+        .card-comment-box {
             font-size: 12px;
-            color: var(--text-sub);
-            text-decoration: underline;
-            cursor: pointer;
-            border: none;
-            background: none;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            color: #333;
+            display: flex;
+            gap: 6px;
+        }
+        .card-comment-box i { margin-top: 2px; color: #666; }
+
+        /* 卡片底部操作列 */
+        .card-actions-bar {
+            margin-top: auto;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            text-align: center;
+            gap: 2px;
         }
 
-        /* 響應式調整 */
-        @media (max-width: 600px) {
-            .row-group { grid-template-columns: 1fr; }
+        .card-act-btn {
+            background: none;
+            border: none;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--text-dark);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+        }
+        .card-act-btn i { font-size: 14px; }
+        .card-act-btn:hover { color: var(--orange-accent); }
+
+        /* --- 底部固定導航模擬（純外觀貼合圖一） --- */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 55px;
+            background-color: #ffffff;
+            border-top: var(--border-thick) solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 11px;
+            color: #666;
+            cursor: pointer;
+        }
+        .bottom-nav-item i { font-size: 18px; margin-bottom: 2px; }
+        .bottom-nav-item.active { color: #000; font-weight: bold; }
+
+        /* 響應式優化：螢幕不夠寬時自動變單欄 */
+        @media (max-width: 900px) {
+            .main-container { grid-template-columns: 1fr; }
+            .top-navbar, .welcome-banner, .main-container { padding: 10px; margin: 10px; }
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="profile-section">
-            <div class="avatar"><i class="fa-solid fa-heart"></i></div>
-            <div class="user-info">
-                <h1 id="display-name">My Collection</h1>
-                <div class="stats">
-                    <span id="count-all">0 收藏</span> • 
-                    <span id="count-cat">0 分類</span>
-                </div>
+    <!-- 頂部導航列 -->
+    <div class="top-navbar">
+        <div class="brand-title">
+            <h1>全家人健康智慧導航站</h1>
+            <p>Family Health Intelligence Cloud Portal</p>
+        </div>
+        <button class="sync-btn">
+            <i class="fa-solid fa-cloud-arrow-up"></i> 同步至 Google Sheet 備份
+        </button>
+    </div>
+
+    <!-- 歡迎橫幅 -->
+    <div class="welcome-banner">
+        <i class="fa-solid fa-circle-user"></i>
+        <span>歡迎回來，親愛的收藏家 | 妳的智慧連結收藏專案</span>
+    </div>
+
+    <!-- 主要版面三欄配置 -->
+    <div class="main-container">
+
+        <!-- 欄位 1：左側管理導航 -->
+        <div class="panel-box">
+            <h2 class="panel-title">管理導航</h2>
+            <div class="panel-subtitle">Category Navigation</div>
+            <ul class="nav-list" id="category-list">
+                <!-- 由 JavaScript 動態生成分類 -->
+            </ul>
+            <div class="nav-divider"></div>
+            <button class="action-btn-outline" onclick="resetCategories()">
+                <i class="fa-solid fa-rotate-right"></i> 重置所有分類
+            </button>
+            <button class="action-btn-dark" onclick="promptNewCategory()">
+                <i class="fa-solid fa-list-check"></i> 分類管理 (新增類別)
+            </button>
+            <button class="action-btn-outline">
+                <i class="fa-solid fa-magnifying-glass"></i> 搜尋與篩選
+            </button>
+        </div>
+
+        <!-- 欄位 2：中間新增表單 -->
+        <div class="panel-box">
+            <h2 class="panel-title">新增項目 (連結 或 小說)</h2>
+            <div class="panel-subtitle">Add Item (Link or Novel)</div>
+            
+            <div class="form-group">
+                <label>名稱 (連結或小說標題)</label>
+                <input type="text" id="item-name" class="form-control" placeholder="名稱 (連結或小說標題)">
+            </div>
+            
+            <div class="form-group">
+                <label>連結網址 (連網，無則留白)</label>
+                <input type="url" id="item-url" class="form-control" placeholder="連結網址 (選填，無則留白)">
+            </div>
+
+            <div class="form-group">
+                <label>封面圖片網址 (選填，無則留白)</label>
+                <input type="url" id="item-img" class="form-control" placeholder="貼上網頁圖片 URL (選填)">
+            </div>
+            
+            <div class="form-group">
+                <label>選擇分類</label>
+                <select id="item-category" class="form-control">
+                    <!-- 由 JavaScript 動態生成下拉選單 -->
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>小註解 | Personal Comments</label>
+                <textarea id="item-notes" class="form-control" rows="4" placeholder="輸入妳的心得或疏現註解..."></textarea>
+            </div>
+            
+            <button class="btn-submit-block" onclick="createNewItem()">
+                確認新增儲存
+                <p>Confirm Add & Save</p>
+            </button>
+        </div>
+
+        <!-- 欄位 3：右側展示牆區 -->
+        <div>
+            <!-- 上方快速分類標籤頁籤 -->
+            <div class="gallery-header" id="filter-tabs">
+                <!-- 由 JavaScript 動態選定標籤 -->
+            </div>
+
+            <!-- 卡片展示網格 -->
+            <div class="cards-grid" id="cards-container">
+                <!-- 卡片動態生成處 -->
             </div>
         </div>
 
-        <div class="input-card">
-            <div class="input-group">
-                <label>名稱 (美食名稱/小說名)</label>
-                <input type="text" id="item-name" placeholder="想存什麼呢？">
-            </div>
-            <div class="input-group">
-                <label>連結 URL (可不填)</label>
-                <input type="url" id="item-url" placeholder="https://...">
-            </div>
-            <div class="row-group">
-                <div class="input-group">
-                    <label>選擇分類</label>
-                    <select id="item-category">
-                        </select>
-                </div>
-                <div class="input-group">
-                    <label>自訂新分類</label>
-                    <input type="text" id="new-category" placeholder="新增分類...">
-                </div>
-            </div>
-            <div class="input-group">
-                <label>小備註 / 註解</label>
-                <textarea id="item-notes" rows="2" placeholder="寫點什麼筆記吧..."></textarea>
-            </div>
-            <button class="btn-add" onclick="addItem()"><i class="fa-solid fa-plus"></i> 儲存到我的收藏</button>
-        </div>
-    </header>
+    </div>
 
-    <div class="filter-bar" id="filter-bar">
-        </div>
+    <!-- 底部固定功能列（還原圖一視覺） -->
+    <div class="bottom-bar">
+        <div class="bottom-nav-item active"><i class="fa-solid fa-house"></i>首頁</div>
+        <div class="bottom-nav-item"><i class="fa-solid fa-user-group"></i>朋友</div>
+        <div class="bottom-nav-item"><i class="fa-solid fa-calendar-days"></i>計畫</div>
+        <div class="bottom-nav-item"><i class="fa-solid fa-circle-user"></i>我</div>
+    </div>
 
-    <main class="gallery" id="gallery">
-        </main>
-
+    <!-- 核心數據運作邏輯 JavaScript -->
     <script>
-        // --- 初始化資料 ---
-        let collections = JSON.parse(localStorage.getItem('myLinks')) || [];
-        let categories = JSON.parse(localStorage.getItem('myCategories')) || ['全部', '美食', '住宿', '小說', '購物'];
-        let currentFilter = '全部';
+        // 初始化預設分類（與圖一高度對齊）
+        const defaultCategories = ['全部項目', '美食拉', '住宿', '小說/註解', '自訂項目'];
+        let categories = JSON.parse(localStorage.getItem('nav_categories')) || defaultCategories;
+        
+        // 初始化範例資料（讓一進來有圖一的效果）
+        const defaultItems = [
+            { id: 1, name: 'Mat Up 覓晌', url: 'https://maps.google.com', img: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500', category: '美食拉', notes: '探索中山的美食！超推～' },
+            { id: 2, name: 'Meat Up', url: 'https://maps.google.com', img: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500', category: '住宿', notes: '捷運站附近的精緻環境。' },
+            { id: 3, name: '赤丸椰子', url: '', img: 'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=500', category: '美食拉', notes: '台北中山赤丸椰子，味道濃郁！' },
+            { id: 4, name: '風中遺珠', url: '', img: '', category: '小說/註解', notes: '【小說標題：風中遺珠】推薦理由：情節轉折很精彩，值得一讀。' }
+        ];
+        let items = JSON.parse(localStorage.getItem('nav_links_items')) || defaultItems;
+        let activeFilter = '全部項目';
 
-        // --- 核心功能 ---
-
-        // 1. 新增項目
-        function addItem() {
-            const name = document.getElementById('item-name').value;
-            const url = document.getElementById('item-url').value;
-            const notes = document.getElementById('item-notes').value;
-            const customCat = document.getElementById('new-category').value.trim();
-            let category = document.getElementById('item-category').value;
+        // 1. 建立新收藏項目
+        function createNewItem() {
+            const name = document.getElementById('item-name').value.trim();
+            const url = document.getElementById('item-url').value.trim();
+            const img = document.getElementById('item-img').value.trim();
+            const category = document.getElementById('item-category').value;
+            const notes = document.getElementById('item-notes').value.trim();
 
             if (!name) {
-                alert('請至少填寫名稱喔！');
+                alert('請輸入名稱（連結或小說標題）喔！');
                 return;
             }
 
-            // 如果有填寫自訂分類，優先使用並加入清單
-            if (customCat) {
-                if (!categories.includes(customCat)) {
-                    categories.push(customCat);
+            const item = { id: Date.now(), name, url, img, category, notes };
+            items.unshift(item); // 讓新項目排序在最前面
+            saveToStorage();
+            resetForm();
+            renderAll();
+        }
+
+        // 2. 刪除項目功能
+        function deleteCard(id) {
+            if (confirm('確定要刪除這個項目嗎？')) {
+                items = items.filter(i => i.id !== id);
+                saveToStorage();
+                renderAll();
+            }
+        }
+
+        // 3. 重新分類項目功能
+        function reclassifyCard(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            // 建立一個簡單好用的 Prompt 讓使用者選擇新分類
+            let promptText = `請輸入你想更換的新分類名稱：\n\n可選現有分類：\n${categories.filter(c=>c!=='全部項目').join('、')}`;
+            const targetCat = prompt(promptText, item.category);
+            
+            if (targetCat && targetCat.trim() !== '') {
+                const trimmedCat = targetCat.trim();
+                // 如果輸入了一個不存在的分類，自動幫忙新增
+                if (!categories.includes(trimmedCat)) {
+                    categories.push(trimmedCat);
                 }
-                category = customCat;
-            }
-
-            const newItem = {
-                id: Date.now(),
-                name: name,
-                url: url,
-                category: category,
-                notes: notes,
-                date: new Date().toLocaleDateString()
-            };
-
-            collections.unshift(newItem); // 加到最前面
-            saveData();
-            clearForm();
-            render();
-        }
-
-        // 2. 刪除項目
-        function deleteItem(id) {
-            if(confirm('確定要刪除這個收藏嗎？')) {
-                collections = collections.filter(item => item.id !== id);
-                saveData();
-                render();
+                item.category = trimmedCat;
+                saveToStorage();
+                renderAll();
             }
         }
 
-        // 3. 儲存到 LocalStorage
-        function saveData() {
-            localStorage.setItem('myLinks', JSON.stringify(collections));
-            localStorage.setItem('myCategories', JSON.stringify(categories));
+        // 4. 手動管理新增分類
+        function promptNewCategory() {
+            const newCat = prompt('請輸入想要新增的自訂分類名稱：');
+            if (newCat && newCat.trim() !== '') {
+                const trimmed = newCat.trim();
+                if (!categories.includes(trimmed)) {
+                    categories.push(trimmed);
+                    saveToStorage();
+                    renderAll();
+                } else {
+                    alert('這個分類已經存在囉！');
+                }
+            }
         }
 
-        // 4. 清除表單
-        function clearForm() {
+        // 5. 重置所有分類與快取
+        function resetCategories() {
+            if (confirm('確定要將分類與資料回復到預設值嗎？')) {
+                localStorage.removeItem('nav_categories');
+                localStorage.removeItem('nav_links_items');
+                categories = [...defaultCategories];
+                items = [...defaultItems];
+                activeFilter = '全部項目';
+                saveToStorage();
+                renderAll();
+            }
+        }
+
+        // 輔助更新快取
+        function saveToStorage() {
+            localStorage.setItem('nav_categories', JSON.stringify(categories));
+            localStorage.setItem('nav_links_items', JSON.stringify(items));
+        }
+
+        // 輔助重置表單
+        function resetForm() {
             document.getElementById('item-name').value = '';
             document.getElementById('item-url').value = '';
+            document.getElementById('item-img').value = '';
             document.getElementById('item-notes').value = '';
-            document.getElementById('new-category').value = '';
         }
 
-        // --- 渲染畫面 ---
-
-        function render() {
-            renderFilterBar();
-            renderSelectOptions();
-            renderGallery();
-            
-            document.getElementById('count-all').innerText = `${collections.length} 收藏`;
-            document.getElementById('count-cat').innerText = `${categories.length - 1} 分類`;
+        // 變更當前篩選目標
+        function changeFilter(catName) {
+            activeFilter = catName;
+            renderAll();
         }
 
-        // 渲染下拉選單
-        function renderSelectOptions() {
-            const select = document.getElementById('item-category');
-            select.innerHTML = categories.filter(c => c !== '全部').map(c => `
-                <option value="${c}">${c}</option>
-            `).join('');
-        }
+        // 6. 整合渲染整頁
+        function renderAll() {
+            // A. 渲染左側管理導航與計數器
+            const catListContainer = document.getElementById('category-list');
+            catListContainer.innerHTML = categories.map(cat => {
+                // 計算各個分類下有多少項目
+                const count = cat === '全部項目' ? items.length : items.filter(i => i.category === cat).length;
+                const icon = cat === '美食拉' ? 'fa-utensils' : (cat === '住宿' ? 'fa-bed' : (cat === '小說/註解' ? 'fa-book-open' : 'fa-folder'));
+                
+                return `
+                    <li class="nav-item ${activeFilter === cat ? 'active' : ''}" onclick="changeFilter('${cat}')">
+                        <div class="nav-item-left">
+                            <i class="fa-solid ${cat === '全部項目' ? 'fa-globe' : icon}"></i>
+                            <span>${cat}</span>
+                        </div>
+                        <span style="font-size:12px; font-weight:bold;">(${count})</span>
+                    </li>
+                `;
+            }).join('');
 
-        // 渲染篩選標籤
-        function renderFilterBar() {
-            const bar = document.getElementById('filter-bar');
-            bar.innerHTML = categories.map(c => `
-                <button class="filter-btn ${currentFilter === c ? 'active' : ''}" onclick="setFilter('${c}')">
-                    ${c}
+            // B. 渲染中間表單的下拉選單選項（不包含“全部項目”）
+            const selectContainer = document.getElementById('item-category');
+            selectContainer.innerHTML = categories
+                .filter(cat => cat !== '全部項目')
+                .map(cat => `<option value="${cat}">${cat}</option>`)
+                .join('');
+
+            // C. 渲染右側頂部標籤頁籤（只取前四個，符合圖一版面長度）
+            const filterTabsContainer = document.getElementById('filter-tabs');
+            const displayTabs = ['全部項目', '美食拉', '住宿', '小說/註解'];
+            filterTabsContainer.innerHTML = displayTabs.map(tab => `
+                <button class="tag-tab ${activeFilter === tab ? 'active' : ''}" onclick="changeFilter('${tab}')">
+                    ${tab === '全部項目' ? '全部' : (tab === '美食拉' ? '吃喝' : (tab === '住宿' ? '戶外' : '探索'))}
                 </button>
             `).join('');
-        }
 
-        function setFilter(cat) {
-            currentFilter = cat;
-            render();
-        }
+            // D. 渲染右側卡片清單
+            const cardsContainer = document.getElementById('cards-container');
+            const filteredItems = activeFilter === '全部項目' ? items : items.filter(i => i.category === activeFilter);
 
-        // 渲染卡片牆
-        function renderGallery() {
-            const gallery = document.getElementById('gallery');
-            const filteredData = currentFilter === '全部' 
-                ? collections 
-                : collections.filter(item => item.category === currentFilter);
-
-            if (filteredData.length === 0) {
-                gallery.innerHTML = `<p style="text-align:center; width:100%; color:#8c736a; padding:50px;">這裡目前空空的喔～</p>`;
+            if (filteredItems.length === 0) {
+                cardsContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #777; padding: 40px; font-size: 14px;">此分類目前空空的，快從中間新增吧！</div>`;
                 return;
             }
 
-            gallery.innerHTML = filteredData.map(item => {
-                const icon = getIcon(item.category);
+            cardsContainer.innerHTML = filteredItems.map(i => {
+                // 核心需求：如果有圖片就完美輸出，沒圖片就不顯示圖片標籤（避免空白）
+                const imageTag = i.img ? `<img src="${i.img}" class="card-cover" alt="cover">` : '';
+                const pinIcon = i.category === '美食拉' ? 'fa-location-dot' : 'fa-hotel';
+                
                 return `
-                    <div class="item-card">
-                        <div class="card-img" style="background: ${getCatColor(item.category)}">
-                            <i class="${icon}"></i>
-                        </div>
-                        <div class="card-content">
-                            <div class="card-category">${item.category}</div>
-                            <div class="card-title">${item.name}</div>
-                            ${item.notes ? `<div class="card-notes">${item.notes}</div>` : ''}
-                            <div class="card-footer">
-                                ${item.url ? `<a href="${item.url}" target="_blank" class="link-btn"><i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟連結</a>` : '<span style="font-size:12px; color:#ccc;">純記錄</span>'}
-                                <button class="delete-btn" onclick="deleteItem(${item.id})">
+                    <div class="link-card">
+                        ${imageTag}
+                        <div class="card-body">
+                            <div class="card-heading">
+                                <h3 class="card-main-title">${i.name}</h3>
+                            </div>
+                            <div class="card-loc-tag">
+                                <i class="fa-solid ${pinIcon}"></i> ${i.category}
+                            </div>
+                            
+                            ${i.notes ? `
+                            <div class="card-comment-box">
+                                <i class="fa-regular fa-comment-dots"></i>
+                                <div>${i.notes}</div>
+                            </div>
+                            ` : ''}
+
+                            <div class="card-actions-bar">
+                                ${i.url ? `
+                                <a href="${i.url}" target="_blank" class="card-act-btn">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    <span>開啟連結</span>
+                                </a>
+                                ` : `
+                                <div class="card-act-btn" style="opacity: 0.3; cursor: not-allowed;">
+                                    <i class="fa-solid fa-link-slash"></i>
+                                    <span>無連結</span>
+                                </div>
+                                `}
+                                <button class="card-act-btn" onclick="reclassifyCard(${i.id})">
+                                    <i class="fa-solid fa-gear"></i>
+                                    <span>重新分類</span>
+                                </button>
+                                <button class="card-act-btn" onclick="deleteCard(${i.id})">
                                     <i class="fa-solid fa-trash-can"></i>
+                                    <span>刪除項目</span>
                                 </button>
                             </div>
                         </div>
@@ -451,31 +706,8 @@
             }).join('');
         }
 
-        // 輔助函式：根據分類給圖示
-        function getIcon(cat) {
-            switch(cat) {
-                case '美食': return 'fa-solid fa-utensils';
-                case '住宿': return 'fa-solid fa-bed';
-                case '小說': return 'fa-solid fa-book';
-                case '購物': return 'fa-solid fa-cart-shopping';
-                default: return 'fa-solid fa-star';
-            }
-        }
-
-        // 輔助函式：根據分類給顏色
-        function getCatColor(cat) {
-            const colors = {
-                '美食': '#fdd5bd',
-                '住宿': '#dcfd8b',
-                '小說': '#bc84ee',
-                '購物': '#ff826e'
-            };
-            return colors[cat] || '#e0e0e0';
-        }
-
-        // 初始執行
-        render();
-
+        // 初始化第一次渲染
+        renderAll();
     </script>
 </body>
 </html>
