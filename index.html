@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>收藏管理系統 - 穩定修復版</title>
-    <!-- 引入 Font Awesome 圖示 -->
+    <title>收藏管理系統 - 欄位對調與雲端串接版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -55,29 +54,16 @@
             gap: 10px;
         }
 
-        .global-save-btn {
-            background-color: var(--success-color);
-            color: white;
-            border: 2px solid var(--border-color);
-            padding: 10px 20px;
-            font-size: 15px;
-            font-weight: 700;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 2px 2px 0px #000;
+        .sync-status {
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
             display: flex;
             align-items: center;
-            gap: 8px;
-        }
-        .global-save-btn:active {
-            transform: translate(1px, 1px);
-            box-shadow: 1px 1px 0px #000;
-        }
-        .global-save-btn.unsaved {
-            background-color: var(--primary-accent);
+            gap: 6px;
         }
 
-        /* 核心佈局：改用傳統超穩定不破版 Flex 佈局 */
+        /* 核心佈局：Flex 佈局 */
         .wrapper {
             display: flex;
             width: 100%;
@@ -85,19 +71,19 @@
             align-items: flex-start;
         }
 
-        /* 左側欄：固定 280px */
+        /* 左側欄：固定 400px（現在是對調後的新增項目表單） */
         .left-col {
-            width: 280px;
-            flex-shrink: 0;
-        }
-
-        /* 中間欄：固定 400px */
-        .mid-col {
             width: 400px;
             flex-shrink: 0;
         }
 
-        /* 右側欄：剩餘空間全部給它，並設定防爆開 */
+        /* 中間欄：固定 280px（現在是對調後的管理導覽清單） */
+        .mid-col {
+            width: 280px;
+            flex-shrink: 0;
+        }
+
+        /* 右側欄：剩餘空間全部給卡片牆 */
         .right-col {
             flex-grow: 1;
             min-width: 0; 
@@ -127,9 +113,9 @@
             align-items: center;
         }
 
-        /* 管理導覽清單（徹底修復錯位與點點問題） */
+        /* 管理導覽清單 */
         .category-list {
-            list-style: none; /* 拔掉預設醜黑點 */
+            list-style: none;
             padding: 0;
             margin: 0;
         }
@@ -266,6 +252,10 @@
             cursor: pointer;
             margin-top: 6px;
         }
+        .submit-btn:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
 
         /* 右側篩選標籤 */
         .filter-tags-row {
@@ -291,7 +281,7 @@
             color: white;
         }
 
-        /* 右側卡片網格（修正並採用 Flex 多行排列，確保絕不破版掉下去） */
+        /* 右側卡片網格 */
         .items-grid {
             display: flex;
             flex-wrap: wrap;
@@ -303,7 +293,7 @@
             background-color: var(--card-bg);
             border: 2px solid var(--border-color);
             border-radius: 12px;
-            width: calc(50% - 8px); /* 平分右邊空間，一行出兩張卡片 */
+            width: calc(50% - 8px); 
             min-width: 250px;
             box-shadow: 3px 3px 0px #000;
             display: flex;
@@ -377,35 +367,18 @@
 </head>
 <body>
 
-    <!-- 頂部列 -->
     <div class="top-bar">
         <div class="system-title">
             <i class="fa-solid fa-box-archive"></i> 收藏與註解管理後台
         </div>
-        <button class="global-save-btn" id="btn-global-save">
-            <i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端
-        </button>
+        <div class="sync-status" id="sync-status-text">
+            <i class="fa-solid fa-cloud"></i> 雲端連線中...
+        </div>
     </div>
 
-    <!-- 三欄主要大包裝 -->
     <div class="wrapper">
         
-        <!-- 左側：導覽區 -->
         <div class="left-col">
-            <div class="panel-box">
-                <div class="panel-title">管理導覽</div>
-                <ul class="category-list" id="category-ul">
-                    <!-- JS 動態生成 -->
-                </ul>
-                <div class="add-category-inline">
-                    <input type="text" id="new-cat-input" placeholder="加新分類...">
-                    <button onclick="addNewCategory()"><i class="fa-solid fa-plus"></i></button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 中間：表單區 -->
-        <div class="mid-col">
             <div class="panel-box">
                 <div class="panel-title" id="form-panel-title">新增項目</div>
                 <form id="item-form" onsubmit="saveItem(event)">
@@ -435,13 +408,24 @@
                         <label>小註解 | Comments</label>
                         <textarea class="form-control" id="item-comment" rows="4" placeholder="寫下妳的筆記..."></textarea>
                     </div>
-                    <button type="submit" class="submit-btn" id="btn-submit-form">確認新增儲存</button>
+                    <button type="submit" class="submit-btn" id="btn-submit-form">確認新增並同步雲端</button>
                     <button type="button" class="submit-btn" id="btn-cancel-edit" style="background-color:#888; display:none;" onclick="cancelEdit()">取消編輯</button>
                 </form>
             </div>
         </div>
 
-        <!-- 右側：卡片牆總覽 -->
+        <div class="mid-col">
+            <div class="panel-box">
+                <div class="panel-title">管理導覽</div>
+                <ul class="category-list" id="category-ul">
+                    </ul>
+                <div class="add-category-inline">
+                    <input type="text" id="new-cat-input" placeholder="加新分類...">
+                    <button onclick="addNewCategory()"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+        </div>
+
         <div class="right-col">
             <div class="filter-tags-row" id="filter-tags-container"></div>
             <div class="items-grid" id="items-grid-container"></div>
@@ -449,18 +433,77 @@
 
     </div>
 
-    <!-- 控制心臟 -->
     <script>
-        let categories = JSON.parse(localStorage.getItem('lovelink_categories')) || ['美食拉', '住宿', '小說/註解', '老公的'];
-        let collections = JSON.parse(localStorage.getItem('lovelink_items')) || [
-            { id: 1, name: '測試用的範例卡片', url: '', img: '', category: '小說/註解', comment: '點擊右下角的「編輯修改」按鈕，可以把這張卡片的內容抓回中間欄位修改喔！' }
-        ];
+        // ⚠️【請將下方的網址換成妳在 Apps Script 部署得到的 Web App 網址】⚠️
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWgfzw6d_Kk5osOblW1_azjz4sDelYnTj6ilTu9y1sxi6kVF_2MVOby9h7ndJQ47K80Q/exec";
+
+        // 分類選單保持獨立或與妳的初始設計同步
+        let categories = ['美食拉', '住宿', '小說/註解', '老公的'];
+        let collections = []; // 從 Google Sheet 即時載入
         
         let currentFilter = '全部';
         let editTargetId = null;
         let currentUploadedImgBase64 = '';
 
-        function init() {
+        // 網頁開起時自動向雲端讀取最新資料
+        window.addEventListener("DOMContentLoaded", fetchFromCloud);
+
+        function showSyncStatus(msg, isDone = false) {
+            const statusBox = document.getElementById('sync-status-text');
+            if (isDone) {
+                statusBox.innerHTML = `<i class="fa-solid fa-cloud-check" style="color: green;"></i> ${msg}`;
+            } else {
+                statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color: orange;"></i> ${msg}`;
+            }
+        }
+
+        // 從雲端 GAS 讀取資料
+        function fetchFromCloud() {
+            showSyncStatus("雲端資料同步中...");
+            if (GAS_WEB_APP_URL.includes("這裡請換成")) {
+                showSyncStatus("尚未設定後端網址", true);
+                // 網址沒設時的降級測試資料
+                collections = [
+                    { id: "demo1", name: '尚未設定 GAS 網址 (測試用)', url: '', imageUrl: '', category: '小說/註解', notes: '請在程式碼中填入妳的 Apps Script 網頁應用程式網址，即可啟用雲端資料庫！' }
+                ];
+                initUI();
+                return;
+            }
+
+            fetch(GAS_WEB_APP_URL)
+                .then(res => res.json())
+                .then(result => {
+                    if (result.status === "success") {
+                        // 轉換後端欄位名稱符合前端變數 (把 notes 轉成 comment, imageUrl 轉成 img)
+                        collections = result.data.map(row => ({
+                            id: row.id,
+                            name: row.name,
+                            url: row.url,
+                            img: row.imageUrl,
+                            category: row.category,
+                            comment: row.notes || '暫無備註說明'
+                        }));
+                        
+                        // 檢查是否有試算表裡出現但前端沒定義的新分類，有的話自動補進分類選單
+                        collections.forEach(item => {
+                            if (item.category && !categories.includes(item.category)) {
+                                categories.push(item.category);
+                            }
+                        });
+
+                        showSyncStatus("已即時讀取最新雲端資料", true);
+                        initUI();
+                    } else {
+                        showSyncStatus("讀取失敗: " + result.message, true);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showSyncStatus("連線失敗，請檢查部署設定", true);
+                });
+        }
+
+        function initUI() {
             renderCategories();
             renderFilterTags();
             renderCards();
@@ -532,7 +575,6 @@
             if (categories.includes(name)) { alert('名稱重複囉！'); return; }
             categories.push(name);
             input.value = '';
-            markUnsaved();
             renderCategories();
             renderFilterTags();
         }
@@ -542,9 +584,15 @@
             if (!newName || newName.trim() === '' || newName === oldName) return;
             const trimmed = newName.trim();
             categories = categories.map(c => c === oldName ? trimmed : c);
-            collections.forEach(item => { if (item.category === oldName) item.category = trimmed; });
+            
+            // 如果有把卡片的舊分類改掉，需要同步更新並推送到雲端
+            collections.forEach(item => { 
+                if (item.category === oldName) {
+                    item.category = trimmed;
+                    pushItemToCloud(item);
+                }
+            });
             if (currentFilter === oldName) currentFilter = trimmed;
-            markUnsaved();
             renderCategories();
             renderFilterTags();
             renderCards();
@@ -553,9 +601,9 @@
         function deleteCategory(catName) {
             if (!confirm(`確定要刪除「${catName}」分類嗎？底下的項目也會一起被刪除喔！`)) return;
             categories = categories.filter(c => c !== catName);
+            // 這裡為了保險，前端先過濾，實際刪除可透過重新整理或手動操作試算表
             collections = collections.filter(item => item.category !== catName);
             if (currentFilter === catName) currentFilter = '全部';
-            markUnsaved();
             renderCategories();
             renderFilterTags();
             renderCards();
@@ -574,40 +622,89 @@
                     currentUploadedImgBase64 = e.target.result;
                 }
                 reader.readAsDataURL(file);
-                markUnsaved();
             }
         }
 
+        // 表單送出：新增或修改項目
         function saveItem(event) {
             event.preventDefault();
+            document.getElementById('btn-submit-form').disabled = true;
+            showSyncStatus("正在傳送至雲端試算表...");
+
             const name = document.getElementById('item-name').value.trim();
             const url = document.getElementById('item-url').value.trim();
             const category = document.getElementById('item-category').value;
             const comment = document.getElementById('item-comment').value.trim();
 
+            let targetItem = null;
+
             if (editTargetId === null) {
-                collections.unshift({
-                    id: Date.now(),
+                // 新增
+                targetItem = {
+                    id: "ID_" + Date.now(),
                     name: name,
                     url: url,
                     img: currentUploadedImgBase64,
                     category: category,
                     comment: comment || '暫無備註說明'
-                });
+                };
+                collections.unshift(targetItem);
             } else {
-                const target = collections.find(item => item.id === editTargetId);
-                if (target) {
-                    target.name = name;
-                    target.url = url;
-                    target.category = category;
-                    target.comment = comment || '暫無備註說明';
-                    if (currentUploadedImgBase64) target.img = currentUploadedImgBase64;
+                // 修改
+                targetItem = collections.find(item => item.id === editTargetId);
+                if (targetItem) {
+                    targetItem.name = name;
+                    targetItem.url = url;
+                    targetItem.category = category;
+                    targetItem.comment = comment || '暫無備註說明';
+                    if (currentUploadedImgBase64) targetItem.img = currentUploadedImgBase64;
                 }
             }
-            cancelEdit();
-            markUnsaved();
-            renderCategories();
-            renderCards();
+
+            // 將資料同步推送到雲端
+            pushItemToCloud(targetItem);
+        }
+
+        // 呼叫 GAS POST API 送出資料
+        function pushItemToCloud(item) {
+            if (GAS_WEB_APP_URL.includes("這裡請換成")) {
+                alert("未設定 GAS 網址，資料僅存於本次網頁畫面中！");
+                document.getElementById('btn-submit-form').disabled = false;
+                cancelEdit();
+                initUI();
+                return;
+            }
+
+            // 轉回後端需要的欄位格式
+            const postPayload = {
+                id: item.id,
+                name: item.name,
+                url: item.url,
+                imageUrl: item.img,
+                category: item.category,
+                notes: item.comment
+            };
+
+            fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors", // 避免跨網域安全性錯誤
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(postPayload)
+            })
+            .then(() => {
+                showSyncStatus("資料已成功同步至 Google 試算表！", true);
+                document.getElementById('btn-submit-form').disabled = false;
+                cancelEdit();
+                // 延遲一秒重新載入最新狀態確保資料正確性
+                setTimeout(fetchFromCloud, 1000);
+            })
+            .catch(err => {
+                console.error(err);
+                showSyncStatus("同步失敗，請檢查網路", true);
+                document.getElementById('btn-submit-form').disabled = false;
+            });
         }
 
         function startEdit(id) {
@@ -627,8 +724,8 @@
             } else {
                 previewImg.style.display = 'none';
             }
-            document.getElementById('btn-submit-form').innerText = "確認修改儲存";
-            document.getElementById('btn-cancel-edit').style.style.display = 'block';
+            document.getElementById('btn-submit-form').innerText = "確認修改並同步";
+            document.getElementById('btn-cancel-edit').style.display = 'block';
         }
 
         function cancelEdit() {
@@ -637,18 +734,16 @@
             document.getElementById('form-panel-title').innerText = "新增項目";
             document.getElementById('upload-preview').style.display = 'none';
             document.getElementById('upload-status-text').innerText = "點擊選取圖片檔案";
-            document.getElementById('btn-submit-form').innerText = "確認新增儲存";
+            document.getElementById('btn-submit-form').innerText = "確認新增並同步雲端";
             document.getElementById('btn-cancel-edit').style.display = 'none';
             currentUploadedImgBase64 = '';
         }
 
         function deleteCard(id) {
-            if (!confirm('確定要刪除嗎？')) return;
+            if (!confirm('確定要刪除嗎？（提醒：請手動至 Google Sheet 中移除該行資料以完成完全刪除）')) return;
             collections = collections.filter(item => item.id !== id);
             if(editTargetId === id) cancelEdit();
-            markUnsaved();
-            renderCategories();
-            renderCards();
+            initUI();
         }
 
         function renderCards() {
@@ -656,7 +751,7 @@
             const data = currentFilter === '全部' ? collections : collections.filter(i => i.category === currentFilter);
 
             if (data.length === 0) {
-                container.innerHTML = `<div style="width:100%; text-align:center; padding:40px; color:#666;">目前沒有項目，快從中間表單新增吧！</div>`;
+                container.innerHTML = `<div style="width:100%; text-align:center; padding:40px; color:#666;">目前沒有項目，快從左側表單新增吧！</div>`;
                 return;
             }
 
@@ -673,26 +768,13 @@
                         </div>
                         <div class="card-footer-actions">
                             ${linkBtn}
-                            <button class="card-action-btn" onclick="startEdit(${item.id})">修改</button>
-                            <button class="card-action-btn delete-btn" onclick="deleteCard(${item.id})">刪除</button>
+                            <button class="card-action-btn" onclick="startEdit('${item.id}')">修改</button>
+                            <button class="card-action-btn delete-btn" onclick="deleteCard('${item.id}')">刪除</button>
                         </div>
                     </div>
                 `;
             }).join('');
         }
-
-        function markUnsaved() {
-            document.getElementById('btn-global-save').classList.add('unsaved');
-        }
-
-        document.getElementById('btn-global-save').addEventListener('click', function() {
-            localStorage.setItem('lovelink_categories', JSON.stringify(categories));
-            localStorage.setItem('lovelink_items', JSON.stringify(collections));
-            this.classList.remove('unsaved');
-            alert('🎉 完美修復排版！最新的所有分類、註解資料已經穩穩儲存囉！');
-        });
-
-        init();
     </script>
 </body>
 </html>
