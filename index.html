@@ -383,6 +383,10 @@
                         <input type="text" class="form-control" id="item-name" required placeholder="請輸入名稱">
                     </div>
                     <div class="form-group">
+    <label>鈉含量 (mg)</label>
+    <input type="number" class="form-control" id="item-sodium" placeholder="0">
+</div>
+                    <div class="form-group">
                         <label>連結網址 (可留白)</label>
                         <input type="url" class="form-control" id="item-url" placeholder="https://...">
                     </div>
@@ -615,6 +619,20 @@
 
         // 核心修改：新增後前端立刻刷新卡片，不乾等雲端下載
         function saveItem(event) {
+            function saveItem(event) {
+    // ...
+    const comment = document.getElementById('item-comment').value.trim();
+    const sodium = document.getElementById('item-sodium').value.trim(); // <--- 抓取數值
+
+    if (editTargetId === null) {
+        targetItem = {
+            // ...
+            comment: comment || '暫無備註說明',
+            sodium: sodium // <--- 存入物件
+        };
+    }
+    // ...
+}
             event.preventDefault();
             showSyncStatus("正在傳送至雲端試算表...");
 
@@ -669,6 +687,22 @@
                 imageUrl: item.img,
                 category: item.category,
                 notes: item.comment
+                // 修改這一段
+function pushItemToCloud(item) {
+    // ... (前面程式碼保持不動)
+    
+    const postPayload = {
+        id: item.id,
+        name: item.name,
+        url: item.url,
+        imageUrl: item.img,
+        category: item.category,
+        notes: item.comment,
+        sodium: item.sodium || 0 // <--- 新增這行：傳輸鈉含量
+    };
+
+    // ... (後面程式碼保持不動)
+}
             };
 
             fetch(GAS_WEB_APP_URL, {
