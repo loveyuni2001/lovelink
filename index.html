@@ -71,19 +71,19 @@
             align-items: flex-start;
         }
 
-        /* 左側欄：固定 400px（現在是對調後的新增項目表單） */
+        /* 左側欄：固定 400px（新增項目表單） */
         .left-col {
             width: 400px;
             flex-shrink: 0;
         }
 
-        /* 中間欄：固定 280px（現在是對調後的管理導覽清單） */
+        /* 中間欄：固定 280px（管理導覽清單） */
         .mid-col {
             width: 280px;
             flex-shrink: 0;
         }
 
-        /* 右側欄：剩餘空間全部給卡片牆 */
+        /* 右側欄：卡片牆 */
         .right-col {
             flex-grow: 1;
             min-width: 0; 
@@ -251,10 +251,6 @@
             font-weight: 700;
             cursor: pointer;
             margin-top: 6px;
-        }
-        .submit-btn:disabled {
-            background-color: #aaa;
-            cursor: not-allowed;
         }
 
         /* 右側篩選標籤 */
@@ -435,17 +431,15 @@
 
     <script>
         // ⚠️【請將下方的網址換成妳在 Apps Script 部署得到的 Web App 網址】⚠️
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWgfzw6d_Kk5osOblW1_azjz4sDelYnTj6ilTu9y1sxi6kVF_2MVOby9h7ndJQ47K80Q/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWgfzw6d_Kk5osOblW1_azjz4sDelYnTj6ilTu9y1sxi6kVF_2MVOby9h7ndJQ47K80Q/exec"; // 請換成妳的網址
 
-        // 分類選單保持獨立或與妳的初始設計同步
-        let categories = ['美食拉', '住宿', '小說/註解', '老公的'];
-        let collections = []; // 從 Google Sheet 即時載入
+        let categories = ['美食拉', '住宿', '小說/註解', '老公的', '媽媽的'];
+        let collections = []; 
         
         let currentFilter = '全部';
         let editTargetId = null;
         let currentUploadedImgBase64 = '';
 
-        // 網頁開起時自動向雲端讀取最新資料
         window.addEventListener("DOMContentLoaded", fetchFromCloud);
 
         function showSyncStatus(msg, isDone = false) {
@@ -457,15 +451,11 @@
             }
         }
 
-        // 從雲端 GAS 讀取資料
+        // 讀取雲端資料
         function fetchFromCloud() {
             showSyncStatus("雲端資料同步中...");
-            if (GAS_WEB_APP_URL.includes("這裡請換成")) {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("這裡請換成")) {
                 showSyncStatus("尚未設定後端網址", true);
-                // 網址沒設時的降級測試資料
-                collections = [
-                    { id: "demo1", name: '尚未設定 GAS 網址 (測試用)', url: '', imageUrl: '', category: '小說/註解', notes: '請在程式碼中填入妳的 Apps Script 網頁應用程式網址，即可啟用雲端資料庫！' }
-                ];
                 initUI();
                 return;
             }
@@ -473,8 +463,7 @@
             fetch(GAS_WEB_APP_URL)
                 .then(res => res.json())
                 .then(result => {
-                    if (result.status === "success") {
-                        // 轉換後端欄位名稱符合前端變數 (把 notes 轉成 comment, imageUrl 轉成 img)
+                    if (result.status === "success" && result.data) {
                         collections = result.data.map(row => ({
                             id: row.id,
                             name: row.name,
@@ -484,7 +473,6 @@
                             comment: row.notes || '暫無備註說明'
                         }));
                         
-                        // 檢查是否有試算表裡出現但前端沒定義的新分類，有的話自動補進分類選單
                         collections.forEach(item => {
                             if (item.category && !categories.includes(item.category)) {
                                 categories.push(item.category);
@@ -494,12 +482,14 @@
                         showSyncStatus("已即時讀取最新雲端資料", true);
                         initUI();
                     } else {
-                        showSyncStatus("讀取失敗: " + result.message, true);
+                        showSyncStatus("讀取失敗", true);
+                        initUI();
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    showSyncStatus("連線失敗，請檢查部署設定", true);
+                    showSyncStatus("連線中斷，切換至本地暫存模式", true);
+                    initUI();
                 });
         }
 
@@ -585,7 +575,6 @@
             const trimmed = newName.trim();
             categories = categories.map(c => c === oldName ? trimmed : c);
             
-            // 如果有把卡片的舊分類改掉，需要同步更新並推送到雲端
             collections.forEach(item => { 
                 if (item.category === oldName) {
                     item.category = trimmed;
@@ -599,9 +588,8 @@
         }
 
         function deleteCategory(catName) {
-            if (!confirm(`確定要刪除「${catName}」分類嗎？底下的項目也會一起被刪除喔！`)) return;
+            if (!confirm(`確定要刪除「${catName}」分類嗎？`)) return;
             categories = categories.filter(c => c !== catName);
-            // 這裡為了保險，前端先過濾，實際刪除可透過重新整理或手動操作試算表
             collections = collections.filter(item => item.category !== catName);
             if (currentFilter === catName) currentFilter = '全部';
             renderCategories();
@@ -625,10 +613,9 @@
             }
         }
 
-        // 表單送出：新增或修改項目
+        // 核心修改：新增後前端立刻刷新卡片，不乾等雲端下載
         function saveItem(event) {
             event.preventDefault();
-            document.getElementById('btn-submit-form').disabled = true;
             showSyncStatus("正在傳送至雲端試算表...");
 
             const name = document.getElementById('item-name').value.trim();
@@ -639,7 +626,7 @@
             let targetItem = null;
 
             if (editTargetId === null) {
-                // 新增
+                // 新增模式
                 targetItem = {
                     id: "ID_" + Date.now(),
                     name: name,
@@ -648,9 +635,9 @@
                     category: category,
                     comment: comment || '暫無備註說明'
                 };
-                collections.unshift(targetItem);
+                collections.unshift(targetItem); // 1. 直接推入前端陣列
             } else {
-                // 修改
+                // 修改模式
                 targetItem = collections.find(item => item.id === editTargetId);
                 if (targetItem) {
                     targetItem.name = name;
@@ -661,21 +648,20 @@
                 }
             }
 
-            // 將資料同步推送到雲端
+            // 2. 讓右側畫面「不需要等雲端」，立刻一秒刷新跳出新卡片！
+            initUI(); 
+            
+            // 3. 偷偷把資料拋接給雲端去存檔
             pushItemToCloud(targetItem);
+            cancelEdit();
         }
 
-        // 呼叫 GAS POST API 送出資料
         function pushItemToCloud(item) {
-            if (GAS_WEB_APP_URL.includes("這裡請換成")) {
-                alert("未設定 GAS 網址，資料僅存於本次網頁畫面中！");
-                document.getElementById('btn-submit-form').disabled = false;
-                cancelEdit();
-                initUI();
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("這裡請換成")) {
+                showSyncStatus("本地已新增 (未設定雲端網址)", true);
                 return;
             }
 
-            // 轉回後端需要的欄位格式
             const postPayload = {
                 id: item.id,
                 name: item.name,
@@ -687,23 +673,18 @@
 
             fetch(GAS_WEB_APP_URL, {
                 method: "POST",
-                mode: "no-cors", // 避免跨網域安全性錯誤
+                mode: "no-cors", 
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(postPayload)
             })
             .then(() => {
-                showSyncStatus("資料已成功同步至 Google 試算表！", true);
-                document.getElementById('btn-submit-form').disabled = false;
-                cancelEdit();
-                // 延遲一秒重新載入最新狀態確保資料正確性
-                setTimeout(fetchFromCloud, 1000);
+                showSyncStatus("已同步備份至 Google 試算表！", true);
             })
             .catch(err => {
                 console.error(err);
-                showSyncStatus("同步失敗，請檢查網路", true);
-                document.getElementById('btn-submit-form').disabled = false;
+                showSyncStatus("雲端備份失敗，但已存在本機畫面", true);
             });
         }
 
@@ -740,7 +721,7 @@
         }
 
         function deleteCard(id) {
-            if (!confirm('確定要刪除嗎？（提醒：請手動至 Google Sheet 中移除該行資料以完成完全刪除）')) return;
+            if (!confirm('確定要刪除嗎？（提醒：請記得手動清除 Google 試算表上的該行資料喔！）')) return;
             collections = collections.filter(item => item.id !== id);
             if(editTargetId === id) cancelEdit();
             initUI();
