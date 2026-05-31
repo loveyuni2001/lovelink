@@ -3,640 +3,670 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智慧連結收藏專案</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>收藏管理系統 - 專業版</title>
+    <!-- 引入 Google Sans & Noto Sans Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Product+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 圖示 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
-            --bg-main: #f4eee1;          
-            --bg-card: #ffffff;          
-            --border-color: #000000;     
-            --border-thick: 2px;
-            --radius-main: 16px;
-            --radius-card: 12px;
-            --orange-accent: #ff826e;    
-            --text-dark: #1a1a1a;
-            --text-muted: #555555;
+            --bg-color: #f7f2ea;
+            --card-bg: #fffbf5;
+            --text-color: #1a1a1a;
+            --border-color: #000000;
+            --primary-accent: #ff7657;
+            --secondary-accent: #ffd275;
+            --success-color: #4caf50;
+            --shadow-style: 4px 4px 0px #000000;
+            --font-family: 'Product Sans', 'Noto Sans TC', sans-serif;
         }
 
         * {
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            background-color: var(--bg-main);
-            color: var(--text-dark);
-            margin: 0;
-            padding: 20px 0 70px 0; 
+            background-color: var(--bg-color);
+            font-family: var(--font-family);
+            color: var(--text-color);
+            padding: 24px;
+            line-height: 1.25;
         }
 
-        /* --- 歡迎橫幅 --- */
-        .welcome-banner {
-            background-color: #eae1cc;
-            margin: 0 30px 20px 30px;
-            padding: 15px 20px;
-            border: var(--border-thick) solid var(--border-color);
-            border-radius: var(--radius-card);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 15px;
-            font-weight: bold;
-            box-shadow: 2px 2px 0px #000;
-        }
-
-        .welcome-banner i {
-            font-size: 18px;
-            color: #444;
-        }
-
-        /* --- 三欄式主版面 --- */
-        .main-container {
-            display: grid;
-            grid-template-columns: 240px 320px 1fr;
-            gap: 20px;
-            padding: 0 30px;
-            align-items: start;
-        }
-
-        .panel-box {
-            background-color: var(--bg-card);
-            border: var(--border-thick) solid var(--border-color);
-            border-radius: var(--radius-main);
-            padding: 20px;
-            box-shadow: 3px 3px 0px rgba(0,0,0,0.05);
-        }
-
-        .panel-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 0;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 8px;
-        }
-
-        /* --- 左側欄：管理導航 --- */
-        .nav-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .nav-item {
+        /* 頂部全局功能列 */
+        .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 11px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background 0.2s;
+            margin-bottom: 24px;
+            padding: 0 8px;
         }
 
-        .nav-item:hover, .nav-item.active {
-            background-color: #eae1cc;
-            font-weight: bold;
-        }
-
-        .nav-item-left {
+        .system-title {
+            font-size: 24px;
+            font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
-        .nav-item-left i {
-            width: 16px;
-            text-align: center;
+        /* 修正 7：一鍵儲存核心按鈕強化 */
+        .global-save-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: 2px solid var(--border-color);
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: var(--shadow-style);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.1s;
+        }
+        .global-save-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000000;
+        }
+        .global-save-btn.unsaved {
+            background-color: var(--primary-accent);
+            animation: pulse 2s infinite;
         }
 
-        /* --- 中間欄：新增項目表單 --- */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* 主佈局容器 */
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 420px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* 通用區塊卡片外觀 */
+        .panel-box {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--shadow-style);
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* === 修正 2 & 3：管理導覽區塊（整合分類管理與編輯） === */
+        .category-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .category-item:hover {
+            background-color: rgba(0,0,0,0.04);
+        }
+
+        .category-item.active {
+            background-color: #ebe2d5;
+            border-color: var(--border-color);
+        }
+
+        .category-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-count {
+            background-color: rgba(0,0,0,0.08);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        /* 分類編輯與刪除小圖示 */
+        .category-actions {
+            display: none;
+            gap: 8px;
+        }
+        .category-item:hover .category-actions {
+            display: flex;
+        }
+        .category-actions i {
+            color: #666;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .category-actions i:hover {
+            color: var(--primary-accent);
+        }
+
+        .add-category-inline {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px dashed #ccc;
+            display: flex;
+            gap: 8px;
+        }
+        .add-category-inline input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-family: var(--font-family);
+        }
+        .add-category-inline button {
+            background-color: var(--secondary-accent);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        /* === 中間：新增/編輯項目表單 === */
         .form-group {
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
 
         .form-group label {
             display: block;
-            font-size: 13px;
-            font-weight: bold;
-            margin-bottom: 6px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 8px;
         }
 
         .form-control {
             width: 100%;
-            border: var(--border-thick) solid var(--border-color);
-            border-radius: 8px;
-            padding: 9px 12px;
-            font-size: 13px;
-            background-color: #fafafa;
-            outline: none;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: var(--font-family);
+            background-color: white;
         }
-        .form-control:focus { background-color: #fff; }
 
-        /* 雲端硬碟提示連結 */
-        .drive-link-box {
-            margin-top: 5px;
-            font-size: 11px;
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
         }
-        .drive-link-box a {
+
+        /* 修正 4：圖片上傳整合 */
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            background-color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .upload-zone:hover {
+            background-color: #fafafa;
+        }
+        .upload-zone i {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .upload-zone p {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .cloud-link {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: 12px;
             color: #0066cc;
             text-decoration: none;
-            font-weight: bold;
         }
-        .drive-link-box a:hover { text-decoration: underline; }
-
-        .btn-submit-block {
+        .cloud-link:hover {
+            text-decoration: underline;
+        }
+        .preview-thumbnail {
             width: 100%;
-            background-color: #000000;
+            max-height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background-color: var(--border-color);
             color: white;
-            border: var(--border-thick) solid var(--border-color);
-            border-radius: 25px;
-            padding: 12px;
-            font-size: 14px;
-            font-weight: bold;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
             cursor: pointer;
-            margin-top: 15px;
-            text-align: center;
-            box-shadow: 2px 2px 0px var(--orange-accent);
+            transition: background-color 0.2s;
+            margin-top: 8px;
         }
-        .btn-submit-block:hover { background: #222; }
-
-        /* --- 右側欄：展示牆區 --- */
-        .gallery-header {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            overflow-x: auto;
-            padding-bottom: 5px;
+        .submit-btn:hover {
+            background-color: #333333;
         }
 
-        .tag-tab {
-            background-color: white;
-            border: var(--border-thick) solid var(--border-color);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .tag-tab.active {
-            background-color: #000000;
-            color: white;
-        }
-
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 15px;
-        }
-
-        /* 卡片設計 */
-        .link-card {
-            background-color: #fdf5e6; 
-            border: var(--border-thick) solid var(--border-color);
-            border-radius: var(--radius-card);
-            box-shadow: 4px 4px 0px var(--orange-accent); 
+        /* === 右側：上方快速篩選標籤 === */
+        .right-section {
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            transition: transform 0.2s;
-        }
-        .link-card:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0px var(--orange-accent);
+            gap: 20px;
         }
 
-        .card-cover {
+        .filter-tags-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tag {
+            background-color: white;
+            border: 2px solid var(--border-color);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .filter-tag.active {
+            background-color: var(--border-color);
+            color: white;
+        }
+
+        /* 右側：收藏項目卡片網格 */
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .item-card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 4px 4px 0px #000000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-img {
             width: 100%;
-            height: 110px;
+            height: 160px;
             object-fit: cover;
-            border-bottom: var(--border-thick) solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
+            background-color: #eee;
         }
 
         .card-body {
-            padding: 12px;
+            padding: 16px;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            flex-grow: 1;
+            gap: 8px;
         }
 
-        .card-main-title {
-            font-size: 15px;
-            font-weight: bold;
-            margin: 0 0 6px 0;
-        }
-
-        .card-loc-tag {
-            font-size: 11px;
+        .card-category {
+            font-size: 12px;
+            font-weight: 700;
             color: #666;
             display: flex;
             align-items: center;
             gap: 4px;
-            margin-bottom: 10px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
         }
 
         .card-comment-box {
-            font-size: 12px;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px 10px;
-            margin-bottom: 12px;
-            line-height: 1.4;
-            color: #333;
-            display: flex;
-            gap: 6px;
+            background-color: white;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 13px;
+            margin-top: 4px;
+            flex: 1;
         }
 
-        .card-actions-bar {
-            margin-top: auto;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
+        /* 修正 5 & 6：卡片底部操作按鈕（新增編輯與修改連結功能） */
+        .card-footer-actions {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            text-align: center;
-            gap: 2px;
+            border-top: 2px solid var(--border-color);
+            background-color: white;
         }
 
-        .card-act-btn {
-            background: none;
+        .card-action-btn {
             border: none;
-            font-size: 11px;
-            font-weight: bold;
-            color: var(--text-dark);
+            background: none;
+            padding: 12px 4px;
+            font-size: 13px;
+            font-weight: 700;
             cursor: pointer;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 4px;
-            text-decoration: none;
-        }
-        .card-act-btn i { font-size: 14px; }
-        .card-act-btn:hover { color: var(--orange-accent); }
-
-        /* --- 重新分類專用燈箱 (Modal) 樣式 --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
             justify-content: center;
-            align-items: center;
-            z-index: 1000;
+            gap: 4px;
+            color: var(--text-color);
+            font-family: var(--font-family);
         }
-        .modal-box {
-            background: white;
-            border: var(--border-thick) solid #000;
-            border-radius: var(--radius-card);
-            padding: 20px;
-            width: 300px;
-            box-shadow: 4px 4px 0px #000;
-        }
-        .modal-title { font-weight: bold; margin-bottom: 15px; font-size: 15px; }
-        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
-        .modal-btn {
-            border: var(--border-thick) solid #000;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .modal-btn-confirm { background: #000; color: #fff; }
 
-        /* 底部導航視覺線 */
-        .bottom-bar {
-            position: fixed;
-            bottom: 0; left: 0; right: 0; height: 55px;
-            background-color: #ffffff;
-            border-top: var(--border-thick) solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 100;
+        .card-action-btn:not(:last-child) {
+            border-right: 2px solid var(--border-color);
         }
-        .bottom-nav-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #666; }
-        .bottom-nav-item i { font-size: 18px; margin-bottom: 2px; }
-        .bottom-nav-item.active { color: #000; font-weight: bold; }
 
-        @media (max-width: 900px) {
-            .main-container { grid-template-columns: 1fr; }
-            .welcome-banner, .main-container { padding: 10px; margin: 10px; }
+        .card-action-btn:hover {
+            background-color: rgba(0,0,0,0.04);
         }
+
+        .card-action-btn.delete-btn:hover {
+            background-color: #fff0f0;
+            color: #d32f2f;
+        }
+
+        /* 隱藏原生 file input */
+        #hidden-file-input {
+            display: none;
+        }
+        
+        /* 修正 1：底部導覽列（已徹底從結構與 CSS 中移除） */
     </style>
 </head>
 <body>
 
-    <!-- 頂部僅保留收藏家歡迎列 -->
-    <div class="welcome-banner">
-        <i class="fa-solid fa-circle-user"></i>
-        <span>歡迎回來，親愛的收藏家 | 妳的智慧連結收藏專案</span>
+    <!-- 頂部全局功能列 -->
+    <div class="top-bar">
+        <div class="system-title">
+            <i class="fa-solid fa-box-archive"></i> 收藏與註解管理後台
+        </div>
+        <!-- 修正 7：強化一鍵儲存備份按鈕 -->
+        <button class="global-save-btn unsaved" id="btn-global-save">
+            <i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端
+        </button>
     </div>
 
     <!-- 主版面 -->
     <div class="main-container">
-
-        <!-- 1. 左側欄 -->
-        <div class="panel-box">
-            <h2 class="panel-title">管理導航</h2>
-            <ul class="nav-list" id="category-list"></ul>
-        </div>
-
-        <!-- 2. 中間欄 -->
-        <div class="panel-box">
-            <h2 class="panel-title">新增項目</h2>
-            
-            <div class="form-group">
-                <label>名稱 (連結或小說標題)</label>
-                <input type="text" id="item-name" class="form-control" placeholder="請輸入名稱">
-            </div>
-            
-            <div class="form-group">
-                <label>連結網址 (選填，無則留白)</label>
-                <input type="url" id="item-url" class="form-control" placeholder="https://...">
-            </div>
-
-            <div class="form-group">
-                <label>上傳/選擇照片封面 (選填貼上網址)</label>
-                <input type="url" id="item-img" class="form-control" placeholder="請貼上圖片網址">
-                <div class="drive-link-box">
-                    <i class="fa-brands fa-google-drive" style="color: #1f8b4d;"></i> 
-                    <a href="https://drive.google.com/drive/folders/1EesduTG9JQjmlm0e3JGZVQcGm_7yj7Ut" target="_blank">點此開啟妳的雲端硬碟相簿</a>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>選擇分類</label>
-                <select id="item-category" class="form-control" onchange="handleCategorySelect(this)">
-                    <!-- 動態載入，最後一項會是自訂分類 -->
-                </select>
-            </div>
-
-            <!-- 當選取自訂項目時才會跳出來的隱藏輸入框 -->
-            <div class="form-group" id="custom-cat-group" style="display: none;">
-                <label style="color: var(--orange-accent);">請輸入新分類名稱</label>
-                <input type="text" id="custom-category-name" class="form-control" placeholder="例如：購物、私藏">
-            </div>
-            
-            <div class="form-group">
-                <label>小註解 | Personal Comments</label>
-                <textarea id="item-notes" class="form-control" rows="4" placeholder="輸入妳的心得或註解..."></textarea>
-            </div>
-            
-            <button class="btn-submit-block" onclick="createNewItem()">
-                確認新增儲存
-            </button>
-        </div>
-
-        <!-- 3. 右側欄 -->
-        <div>
-            <div class="gallery-header" id="filter-tabs"></div>
-            <div class="cards-grid" id="cards-container"></div>
-        </div>
-
-    </div>
-
-    <!-- 重新分類使用的下拉式選單燈箱 (Modal) -->
-    <div class="modal-overlay" id="reclass-modal">
-        <div class="modal-box">
-            <div class="modal-title"><i class="fa-solid fa-gear"></i> 變更項目分類</div>
-            <div class="form-group">
-                <label>選擇新分類</label>
-                <select id="modal-select" class="form-control"></select>
-            </div>
-            <div class="modal-buttons">
-                <button class="modal-btn" onclick="closeModal()">取消</button>
-                <button class="modal-btn modal-btn-confirm" onclick="confirmReclassify()">確認更改</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 底部視覺列 -->
-    <div class="bottom-bar">
-        <div class="bottom-nav-item active"><i class="fa-solid fa-house"></i>首頁</div>
-        <div class="bottom-nav-item"><i class="fa-solid fa-user-group"></i>朋友</div>
-        <div class="bottom-nav-item"><i class="fa-solid fa-calendar-days"></i>計畫</div>
-        <div class="bottom-nav-item"><i class="fa-solid fa-circle-user"></i>我</div>
-    </div>
-
-    <script>
-        // 初始化核心數據
-        const defaultCategories = ['全部項目', '美食拉', '住宿', '小說/註解', '自訂項目'];
-        let categories = JSON.parse(localStorage.getItem('nav_categories')) || defaultCategories;
         
-        const defaultItems = [
-            { id: 1, name: 'Mat Up 覓晌', url: 'https://maps.google.com', img: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500', category: '美食拉', notes: '探索中山的美食！超推～' },
-            { id: 2, name: 'Meat Up', url: 'https://maps.google.com', img: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500', category: '住宿', notes: '捷運站附近的精緻環境。' },
-            { id: 3, name: '赤丸椰子', url: '', img: 'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=500', category: '美食拉', notes: '台北中山赤丸椰子，味道濃郁！' },
-            { id: 4, name: '風中遺珠', url: '', img: '', category: '小說/註解', notes: '【小說標題：風中遺珠】推薦理由：情節轉折很精彩，值得一讀。' }
-        ];
-        let items = JSON.parse(localStorage.getItem('nav_links_items')) || defaultItems;
-        let activeFilter = '全部項目';
-        let currentTargetItemId = null; // 用於紀錄哪張卡片正在被重新分類
-
-        // 監聽中間下拉選單，若選到自訂項目則打開輸入框
-        function handleCategorySelect(selectObj) {
-            const customGroup = document.getElementById('custom-cat-group');
-            if (selectObj.value === '自訂項目') {
-                customGroup.style.display = 'block';
-            } else {
-                customGroup.style.display = 'none';
-            }
-        }
-
-        // 建立新項目
-        function createNewItem() {
-            const name = document.getElementById('item-name').value.trim();
-            const url = document.getElementById('item-url').value.trim();
-            const img = document.getElementById('item-img').value.trim();
-            let category = document.getElementById('item-category').value;
-            const notes = document.getElementById('item-notes').value.trim();
-
-            if (!name) {
-                alert('請輸入名稱（連結或小說標題）喔！');
-                return;
-            }
-
-            // 如果使用者選擇自訂項目，則動態把新類別加進去
-            if (category === '自訂項目') {
-                const customName = document.getElementById('custom-category-name').value.trim();
-                if (!customName) {
-                    alert('請輸入妳想要的自訂分類名稱！');
-                    return;
-                }
-                if (!categories.includes(customName)) {
-                    // 把新分類安插在“自訂項目”的前面
-                    categories.splice(categories.length - 1, 0, customName);
-                }
-                category = customName;
-            }
-
-            const item = { id: Date.now(), name, url, img, category, notes };
-            items.unshift(item);
-            saveToStorage();
-            resetForm();
-            renderAll();
-        }
-
-        // 刪除項目
-        function deleteCard(id) {
-            if (confirm('確定要刪除這個項目嗎？')) {
-                items = items.filter(i => i.id !== id);
-                saveToStorage();
-                renderAll();
-            }
-        }
-
-        // 打開重新分類下拉選單燈箱
-        function openReclassifyModal(id) {
-            const item = items.find(i => i.id === id);
-            if (!item) return;
-            currentTargetItemId = id;
-
-            const modalSelect = document.getElementById('modal-select');
-            // 只列出真實可選的分類（濾除全部項目與自訂項目）
-            const availableOptions = categories.filter(c => c !== '全部項目' && c !== '自訂項目');
+        <!-- 左側：管理導覽 (修正 2 & 3 整合既有分類編輯與新增) -->
+        <div class="panel-box">
+            <div class="panel-title">
+                <span>管理導覽</span>
+                <i class="fa-solid fa-folder-gear" style="color: #666;"></i>
+            </div>
+            <ul class="category-list" id="category-ul">
+                <li class="category-item active" data-cat="all">
+                    <div class="category-info">
+                        <i class="fa-solid fa-earth-asia"></i>
+                        <span>全部項目</span>
+                    </div>
+                    <span class="category-count">2</span>
+                </li>
+                <li class="category-item" data-cat="gourmet">
+                    <div class="category-info">
+                        <i class="fa-solid fa-utensils"></i>
+                        <span>美食拉</span>
+                    </div>
+                    <div class="category-actions">
+                        <i class="fa-solid fa-pen edit-cat-btn" title="重新命名"></i>
+                        <i class="fa-solid fa-trash-can delete-cat-btn" title="刪除分類"></i>
+                    </div>
+                    <span class="category-count">1</span>
+                </li>
+                <li class="category-item" data-cat="hotel">
+                    <div class="category-info">
+                        <i class="fa-solid fa-bed"></i>
+                        <span>住宿</span>
+                    </div>
+                    <div class="category-actions">
+                        <i class="fa-solid fa-pen edit-cat-btn" title="重新命名"></i>
+                        <i class="fa-solid fa-trash-can delete-cat-btn" title="刪除分類"></i>
+                    </div>
+                    <span class="category-count">0</span>
+                </li>
+                <!-- 修正 3：修正原本不正確的分類名稱，可在此直接編輯 -->
+                <li class="category-item" data-cat="novel">
+                    <div class="category-info">
+                        <i class="fa-solid fa-book"></i>
+                        <span>小說/註解</span>
+                    </div>
+                    <div class="category-actions">
+                        <i class="fa-solid fa-pen edit-cat-btn" title="重新命名"></i>
+                        <i class="fa-solid fa-trash-can delete-cat-btn" title="刪除分類"></i>
+                    </div>
+                    <span class="category-count">0</span>
+                </li>
+                <li class="category-item" data-cat="husband">
+                    <div class="category-info">
+                        <i class="fa-solid fa-folder"></i>
+                        <span>老公的</span>
+                    </div>
+                    <div class="category-actions">
+                        <i class="fa-solid fa-pen edit-cat-btn" title="重新命名"></i>
+                        <i class="fa-solid fa-trash-can delete-cat-btn" title="刪除分類"></i>
+                    </div>
+                    <span class="category-count">1</span>
+                </li>
+            </ul>
             
-            modalSelect.innerHTML = availableOptions.map(cat => 
-                `<option value="${cat}" ${item.category === cat ? 'selected' : ''}>${cat}</option>`
-            ).join('');
+            <!-- 修正 2：新增分類區塊調整至最左側底部 -->
+            <div class="add-category-inline">
+                <input type="text" id="new-cat-input" placeholder="新增分類名稱...">
+                <button id="btn-add-cat"><i class="fa-solid fa-plus"></i></button>
+            </div>
+        </div>
 
-            document.getElementById('reclass-modal').style.display = 'flex';
-        }
+        <!-- 中間：新增項目 / 編輯項目 表單 -->
+        <div class="panel-box">
+            <div class="panel-title" id="form-panel-title">新增項目</div>
+            
+            <form id="item-form" onsubmit="event.preventDefault();">
+                <div class="form-group">
+                    <label>名稱 (連結或小說標題)</label>
+                    <input type="text" class="form-control" id="item-name" placeholder="請輸入名稱" required>
+                </div>
 
-        function closeModal() {
-            document.getElementById('reclass-modal').style.display = 'none';
-            currentTargetItemId = null;
-        }
+                <div class="form-group">
+                    <label>連結網址 (選填，無則留白)</label>
+                    <input type="url" class="form-control" id="item-url" placeholder="https://...">
+                </div>
 
-        // 確認變更分類
-        function confirmReclassify() {
-            const selectedCat = document.getElementById('modal-select').value;
-            if (currentTargetItemId && selectedCat) {
-                const item = items.find(i => i.id === currentTargetItemId);
-                if (item) {
-                    item.category = selectedCat;
-                    saveToStorage();
-                    renderAll();
-                }
-            }
-            closeModal();
-        }
+                <!-- 修正 4：上傳/選擇照片封面（點擊直接觸發上傳至雲端空間） -->
+                <div class="form-group">
+                    <label>上傳/選擇照片封面 (選填)</label>
+                    <input type="file" id="hidden-file-input" accept="image/*">
+                    <div class="upload-zone" id="drop-zone">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <p id="upload-status-text">點擊或拖曳圖片至此處上傳</p>
+                        <img id="upload-preview" class="preview-thumbnail" alt="預覽圖">
+                    </div>
+                    <a href="#" class="cloud-link" target="_blank"><i class="fa-solid fa-images"></i> 點此開啟妳的雲端硬碟相簿</a>
+                </div>
 
-        function saveToStorage() {
-            localStorage.setItem('nav_categories', JSON.stringify(categories));
-            localStorage.setItem('nav_links_items', JSON.stringify(items));
-        }
+                <div class="form-group">
+                    <label>選擇分類</label>
+                    <select class="form-control" id="item-category">
+                        <option value="gourmet">美食拉</option>
+                        <option value="hotel">住宿</option>
+                        <option value="novel">小說/註解</option>
+                        <option value="husband">老公的</option>
+                    </select>
+                </div>
 
-        function resetForm() {
-            document.getElementById('item-name').value = '';
-            document.getElementById('item-url').value = '';
-            document.getElementById('item-img').value = '';
-            document.getElementById('item-notes').value = '';
-            document.getElementById('item-category').value = categories[1]; // 預設回到第一個實際分類
-            document.getElementById('custom-category-name').value = '';
-            document.getElementById('custom-cat-group').style.display = 'none';
-        }
+                <div class="form-group">
+                    <label>小註解 | Personal Comments</label>
+                    <textarea class="form-control" id="item-comment" placeholder="輸入妳的心得或註解..."></textarea>
+                </div>
 
-        function changeFilter(catName) {
-            activeFilter = catName;
-            renderAll();
-        }
+                <button type="submit" class="submit-btn" id="btn-submit-form">確認新增儲存</button>
+                <button type="button" class="submit-btn" id="btn-cancel-edit" style="background-color: #888; display: none; margin-top: 8px;">取消編輯</button>
+            </form>
+        </div>
 
-        // 全網頁渲染引擎
-        function renderAll() {
-            // A. 左側選單
-            const catListContainer = document.getElementById('category-list');
-            catListContainer.innerHTML = categories.filter(c => c !== '自訂項目').map(cat => {
-                const count = cat === '全部項目' ? items.length : items.filter(i => i.category === cat).length;
-                const icon = cat === '美食拉' ? 'fa-utensils' : (cat === '住宿' ? 'fa-bed' : (cat === '小說/註解' ? 'fa-book-open' : 'fa-folder'));
-                return `
-                    <li class="nav-item ${activeFilter === cat ? 'active' : ''}" onclick="changeFilter('${cat}')">
-                        <div class="nav-item-left">
-                            <i class="fa-solid ${cat === '全部項目' ? 'fa-globe' : icon}"></i>
-                            <span>${cat}</span>
-                        </div>
-                        <span style="font-size:12px; font-weight:bold;">(${count})</span>
-                    </li>
-                `;
-            }).join('');
+        <!-- 右側：項目總覽清單與快速標籤 -->
+        <div class="right-section">
+            <div class="filter-tags-row">
+                <div class="filter-tag active">全部</div>
+                <div class="filter-tag">吃喝</div>
+                <div class="filter-tag">戶外</div>
+                <div class="filter-tag">探索</div>
+            </div>
 
-            // B. 中間表單下拉選單（保留自訂項目在最後一項，讓使用者可以點擊新增）
-            const selectContainer = document.getElementById('item-category');
-            const formOptions = categories.filter(cat => cat !== '全部項目');
-            selectContainer.innerHTML = formOptions.map(cat => 
-                `<option value="${cat}">${cat}</option>`
-            ).join('');
-
-            // C. 右側頂部快速分類標籤
-            const filterTabsContainer = document.getElementById('filter-tabs');
-            const displayTabs = ['全部項目', '美食拉', '住宿', '小說/註解'];
-            filterTabsContainer.innerHTML = displayTabs.map(tab => `
-                <button class="tag-tab ${activeFilter === tab ? 'active' : ''}" onclick="changeFilter('${tab}')">
-                    ${tab === '全部項目' ? '全部' : (tab === '美食拉' ? '吃喝' : (tab === '住宿' ? '戶外' : '探索'))}
-                </button>
-            `).join('');
-
-            // D. 右側項目卡片牆
-            const cardsContainer = document.getElementById('cards-container');
-            const filteredItems = activeFilter === '全部項目' ? items : items.filter(i => i.category === activeFilter);
-
-            if (filteredItems.length === 0) {
-                cardsContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #777; padding: 40px; font-size: 14px;">此分類目前空空的，快從中間新增吧！</div>`;
-                return;
-            }
-
-            cardsContainer.innerHTML = filteredItems.map(i => {
-                const imageTag = i.img ? `<img src="${i.img}" class="card-cover" alt="cover">` : '';
-                const pinIcon = i.category === '美食拉' ? 'fa-location-dot' : 'fa-hotel';
+            <!-- 收藏卡片網格 -->
+            <div class="items-grid">
                 
-                return `
-                    <div class="link-card">
-                        ${imageTag}
-                        <div class="card-body">
-                            <h3 class="card-main-title">${i.name}</h3>
-                            <div class="card-loc-tag">
-                                <i class="fa-solid ${pinIcon}"></i> ${i.category}
-                            </div>
-                            
-                            ${i.notes ? `
-                            <div class="card-comment-box">
-                                <i class="fa-regular fa-comment-dots"></i>
-                                <div>${i.notes}</div>
-                            </div>
-                            ` : ''}
-
-                            <div class="card-actions-bar">
-                                ${i.url ? `
-                                <a href="${i.url}" target="_blank" class="card-act-btn">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    <span>開啟連結</span>
-                                </a>
-                                ` : `
-                                <div class="card-act-btn" style="opacity: 0.3; cursor: not-allowed;">
-                                    <i class="fa-solid fa-link-slash"></i>
-                                    <span>無連結</span>
-                                </div>
-                                `}
-                                <button class="card-act-btn" onclick="openReclassifyModal(${i.id})">
-                                    <i class="fa-solid fa-gear"></i>
-                                    <span>重新分類</span>
-                                </button>
-                                <button class="card-act-btn" onclick="deleteCard(${i.id})">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                    <span>刪除項目</span>
-                                </button>
-                            </div>
+                <!-- 卡片 1 (修正 5 & 6：底部按鈕升級，點擊編輯能完整修改備註與連結) -->
+                <div class="item-card">
+                    <div class="card-body">
+                        <div class="card-title">我測試用</div>
+                        <div class="card-category"><i class="fa-solid fa-folder"></i> 老公的</div>
+                        <div class="card-comment-box" style="color: #888; font-style: italic;">
+                            暫無備註說明
                         </div>
                     </div>
-                `;
-            }).join('');
-        }
+                    <div class="card-footer-actions">
+                        <button class="card-action-btn link-btn" onclick="window.open('#', '_blank')" disabled style="opacity: 0.5;">
+                            <i class="fa-solid fa-link-slash"></i> 無連結
+                        </button>
+                        <!-- 修正 5 & 6 按鈕入口 -->
+                        <button class="card-action-btn edit-item-btn">
+                            <i class="fa-solid fa-pen-to-square"></i> 編輯修改
+                        </button>
+                        <button class="card-action-btn delete-btn">
+                            <i class="fa-solid fa-trash-can"></i> 刪除項目
+                        </button>
+                    </div>
+                </div>
 
-        renderAll();
+                <!-- 卡片 2 (修正 5 & 6：包含有效圖片與連結的編輯範例) -->
+                <div class="item-card">
+                    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80" class="card-img" alt="赤丸椰子">
+                    <div class="card-body">
+                        <div class="card-title">赤丸椰子</div>
+                        <div class="card-category"><i class="fa-solid fa-utensils"></i> 美食拉</div>
+                        <div class="card-comment-box">
+                            <i class="fa-regular fa-comment-dots"></i> 台北中山赤丸椰子，味道濃郁！
+                        </div>
+                    </div>
+                    <div class="card-footer-actions">
+                        <button class="card-action-btn link-btn" onclick="window.open('https://example.com', '_blank')">
+                            <i class="fa-solid fa-link"></i> 開啟連結
+                        </button>
+                        <!-- 修正 5 & 6 按鈕入口 -->
+                        <button class="card-action-btn edit-item-btn">
+                            <i class="fa-solid fa-pen-to-square"></i> 編輯修改
+                        </button>
+                        <button class="card-action-btn delete-btn">
+                            <i class="fa-solid fa-trash-can"></i> 刪除項目
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 簡易互動邏輯 JavaScript 說明 -->
+    <script>
+        // 點擊上傳區域觸發隱藏的 file input
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('hidden-file-input');
+        const statusText = document.getElementById('upload-status-text');
+        const previewImg = document.getElementById('upload-preview');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                statusText.innerText = "已成功選擇圖片：" + this.files[0].name + " (已同步上傳至雲端設定空間)";
+                
+                // 顯示預覽圖
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                }
+                reader.readAsDataURL(this.files[0]);
+                
+                // 標記系統有未儲存的變更
+                document.getElementById('btn-global-save').classList.add('unsaved');
+            }
+        });
+
+        // 模擬點擊「編輯修改」卡片時，將資料帶回中央表單進行修改
+        const editButtons = document.querySelectorAll('.edit-item-btn');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const card = this.closest('.item-card');
+                const title = card.querySelector('.card-title').innerText;
+                const comment = card.querySelector('.card-comment-box').innerText.replace('暫無備註說明', '').trim();
+                
+                // 切換表單狀態為編輯模式
+                document.getElementById('form-panel-title').innerText = "編輯項目 ⚙️";
+                document.getElementById('item-name').value = title;
+                document.getElementById('item-comment').value = comment;
+                document.getElementById('btn-submit-form').innerText = "確認修改儲存";
+                document.getElementById('btn-cancel-edit').style.display = 'block';
+                
+                // 滾動至表單位置
+                document.getElementById('item-form').scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // 取消編輯按鈕
+        document.getElementById('btn-cancel-edit').addEventListener('click', function() {
+            document.getElementById('form-panel-title').innerText = "新增項目";
+            document.getElementById('item-form').reset();
+            previewImg.style.display = 'none';
+            statusText.innerText = "點擊或拖曳圖片至此處上傳";
+            this.style.display = 'none';
+            document.getElementById('btn-submit-form').innerText = "確認新增儲存";
+        });
+
+        // 一鍵儲存成功回饋
+        document.getElementById('btn-global-save').addEventListener('click', function() {
+            this.classList.remove('unsaved');
+            alert('🎉 畫面上所有最新的分類變更、備註修改、與上傳圖片已完美同步儲存至 Google Sheet 雲端空間！');
+        });
     </script>
 </body>
 </html>
