@@ -617,22 +617,8 @@
             }
         }
 
-        // 核心修改：新增後前端立刻刷新卡片，不乾等雲端下載
+ // 核心修改：新增後前端立刻刷新卡片，不乾等雲端下載
         function saveItem(event) {
-            function saveItem(event) {
-    // ...
-    const comment = document.getElementById('item-comment').value.trim();
-    const sodium = document.getElementById('item-sodium').value.trim(); // <--- 抓取數值
-
-    if (editTargetId === null) {
-        targetItem = {
-            // ...
-            comment: comment || '暫無備註說明',
-            sodium: sodium // <--- 存入物件
-        };
-    }
-    // ...
-}
             event.preventDefault();
             showSyncStatus("正在傳送至雲端試算表...");
 
@@ -640,6 +626,9 @@
             const url = document.getElementById('item-url').value.trim();
             const category = document.getElementById('item-category').value;
             const comment = document.getElementById('item-comment').value.trim();
+            // 這裡抓取鈉含量，如果找不到輸入框就預設為 "0"
+            const sodiumInput = document.getElementById('item-sodium');
+            const sodium = sodiumInput ? sodiumInput.value.trim() : "0";
 
             let targetItem = null;
 
@@ -651,9 +640,10 @@
                     url: url,
                     img: currentUploadedImgBase64,
                     category: category,
-                    comment: comment || '暫無備註說明'
+                    comment: comment || '暫無備註說明',
+                    sodium: sodium // 存入鈉含量
                 };
-                collections.unshift(targetItem); // 1. 直接推入前端陣列
+                collections.unshift(targetItem);
             } else {
                 // 修改模式
                 targetItem = collections.find(item => item.id === editTargetId);
@@ -662,14 +652,15 @@
                     targetItem.url = url;
                     targetItem.category = category;
                     targetItem.comment = comment || '暫無備註說明';
+                    targetItem.sodium = sodium; // 更新鈉含量
                     if (currentUploadedImgBase64) targetItem.img = currentUploadedImgBase64;
                 }
             }
 
-            // 2. 讓右側畫面「不需要等雲端」，立刻一秒刷新跳出新卡片！
+            // 2. 讓右側畫面「不需要等雲端」，立刻刷新
             initUI(); 
             
-            // 3. 偷偷把資料拋接給雲端去存檔
+            // 3. 拋接給雲端去存檔
             pushItemToCloud(targetItem);
             cancelEdit();
         }
