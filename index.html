@@ -791,7 +791,7 @@
             }
         }
 
-        // === 6. 雲端同步控管模組 ===
+       // === 6. 雲端同步控管模組 ===
         function markUnsaved() {
             document.getElementById('btn-global-save').classList.add('unsaved');
         }
@@ -800,62 +800,59 @@
             const btn = this;
             btn.innerText = "⏳ 正在備份同步中...";
             
-            // 請找到妳程式碼中執行 fetch(GAS_WEB_APP_URL, { ... }) 的地方，改成這樣：
-
-fetch(GAS_WEB_APP_URL, {
-  method: "POST",
-  mode: "no-cors", // 關鍵：對應 GAS 的特性，必須用 no-cors
-  headers: {
-    "Content-Type": "text/plain" // 避免觸發預檢請求 (Preflight)
-  },
-// 請確保妳儲存按鈕發送時的 body 是長這樣：
-body: JSON.stringify({ items: myLinks }) // 把後面的 items 改成 myLinks 傳給雲端
-    })
-.then(() => {
-  // 只要走到這裡，就代表請求成功發出了！
-  btn.classList.remove('unsaved');
-  btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
-  alert("🎉 資料儲存成功，已完美同步至雲端試算表！");
-})
-.catch(err => {
-  console.error(err);
-  btn.classList.remove('unsaved');
-  btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
-  // 修正：真正失敗時，要老實告訴妳失敗了，才不會誤導
-  alert("❌ 同步失敗，請檢查網路連線或 GAS 網址是否正確。");
-});
+            // 修正：發送給 Google Sheet 時，改用正確的 myLinks 變數，並採用 text/plain 穿透
+            fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+                body: JSON.stringify({ items: myLinks }) 
+            })
+            .then(() => {
+                // 成功送出後恢復按鈕
+                btn.classList.remove('unsaved');
+                btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
+                alert("🎉 資料儲存成功，已完美同步至雲端試算表！");
+            })
+            .catch(err => {
+                console.error(err);
+                btn.classList.remove('unsaved');
+                btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
+                alert("❌ 同步失敗，請檢查網路連線。");
+            });
         });
-// === 7. 雲端初始化同步模組 ===
+
+        // === 7. 雲端初始化同步模組 ===
         function initializeSystemFromCloud() {
             if (!GAS_WEB_APP_URL) {
                 renderSystem();
                 return;
             }
 
-            // 網頁一打開，先去跟 Google Sheet 拿最新資料
-            fetch(GAS_WEB_APP_URL)
-                .then(response => {
-                    if (!response.ok) throw new Error("網路回應不成功");
-                    return response.json();
-                })
-                .then(res => {
-                    if (res.status === "success" && res.data && res.data.length > 0) {
-                        console.log("成功從雲端下載最新資料！", res.data);
-                        
-                        // 正名：將雲端撈到的試算表資料，同步覆蓋回妳網頁的變數 myLinks
-                        myLinks = res.data;
-                        
-                        // 正名：衕步存入妳專屬的本地快取箱子 'myLinks'
-                        localStorage.setItem('myLinks', JSON.stringify(myLinks)); 
-                    }
-                    // 執行渲染把卡片畫出來
-                    renderSystem();
-                })
-                .catch(err => {
-                    console.error("讀取雲端失敗或超時，自動降級改用本地快取載入:", err);
-                    // 萬一 Google 沒回應，依然用本地原本的 myLinks 渲染畫面
-                    renderSystem();
-                });
+            // 修正 CORS：改用加上 redirect: "follow" 並且讓 GAS 端處理回應
+            fetch(GAS_WEB_APP_URL, {
+                method: "GET",
+                redirect: "follow"
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("網路回應不成功");
+                return response.json();
+            })
+            .then(res => {
+                if (res.status === "success" && res.data && res.data.length > 0) {
+                    console.log("成功從雲端下載最新資料！", res.data);
+                    
+                    // 同步雲端資料到本地變數與快取箱子
+                    myLinks = res.data;
+                    localStorage.setItem('myLinks', JSON.stringify(myLinks)); 
+                }
+                renderSystem();
+            })
+            .catch(err => {
+                console.error("讀取雲端失敗，改用本地快取載入:", err);
+                renderSystem();
+            });
         }
 
         // 正式啟動：用雲端優先的方式初始化系統
