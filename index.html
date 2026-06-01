@@ -383,10 +383,6 @@
                         <input type="text" class="form-control" id="item-name" required placeholder="請輸入名稱">
                     </div>
                     <div class="form-group">
-    <label>鈉含量 (mg)</label>
-    <input type="number" class="form-control" id="item-sodium" placeholder="0">
-</div>
-                    <div class="form-group">
                         <label>連結網址 (可留白)</label>
                         <input type="url" class="form-control" id="item-url" placeholder="https://...">
                     </div>
@@ -617,48 +613,62 @@
             }
         }
 
-// 請務必使用這段乾淨的程式碼取代原本的 saveItem
-function saveItem(event) {
-    event.preventDefault();
-    showSyncStatus("正在傳送至雲端試算表...");
+        // 核心修改：新增後前端立刻刷新卡片，不乾等雲端下載
+        function saveItem(event) {
+            event.preventDefault();
+            showSyncStatus("正在傳送至雲端試算表...");
 
-    const name = document.getElementById('item-name').value.trim();
-    const url = document.getElementById('item-url').value.trim();
-    const category = document.getElementById('item-category').value;
-    const comment = document.getElementById('item-comment').value.trim();
+            const name = document.getElementById('item-name').value.trim();
+            const url = document.getElementById('item-url').value.trim();
+            const category = document.getElementById('item-category').value;
+            const comment = document.getElementById('item-comment').value.trim();
 
-    let targetItem = null;
+            let targetItem = null;
 
-    if (editTargetId === null) {
-        // 新增模式
-        targetItem = {
-            id: "ID_" + Date.now(),
-            name: name,
-            url: url,
-            img: currentUploadedImgBase64,
-            category: category,
-            comment: comment || '暫無備註說明'
-        };
-        collections.unshift(targetItem);
-    } else {
-        // 修改模式
-        targetItem = collections.find(item => item.id === editTargetId);
-        if (targetItem) {
-            targetItem.name = name;
-            targetItem.url = url;
-            targetItem.category = category;
-            targetItem.comment = comment || '暫無備註說明';
-            if (currentUploadedImgBase64) targetItem.img = currentUploadedImgBase64;
+            if (editTargetId === null) {
+                // 新增模式
+                targetItem = {
+                    id: "ID_" + Date.now(),
+                    name: name,
+                    url: url,
+                    img: currentUploadedImgBase64,
+                    category: category,
+                    comment: comment || '暫無備註說明'
+                };
+                collections.unshift(targetItem); // 1. 直接推入前端陣列
+            } else {
+                // 修改模式
+                targetItem = collections.find(item => item.id === editTargetId);
+                if (targetItem) {
+                    targetItem.name = name;
+                    targetItem.url = url;
+                    targetItem.category = category;
+                    targetItem.comment = comment || '暫無備註說明';
+                    if (currentUploadedImgBase64) targetItem.img = currentUploadedImgBase64;
+                }
+            }
+
+            // 2. 讓右側畫面「不需要等雲端」，立刻一秒刷新跳出新卡片！
+            initUI(); 
+            
+            // 3. 偷偷把資料拋接給雲端去存檔
+            pushItemToCloud(targetItem);
+            cancelEdit();
         }
-    }
 
-    initUI(); 
-    pushItemToCloud(targetItem);
-    cancelEdit();
-}
+        function pushItemToCloud(item) {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("這裡請換成")) {
+                showSyncStatus("本地已新增 (未設定雲端網址)", true);
+                return;
+            }
 
-    // ... (後面程式碼保持不動)
-}
+            const postPayload = {
+                id: item.id,
+                name: item.name,
+                url: item.url,
+                imageUrl: item.img,
+                category: item.category,
+                notes: item.comment
             };
 
             fetch(GAS_WEB_APP_URL, {
