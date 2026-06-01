@@ -791,7 +791,7 @@
             }
         }
 
-      // === 6. 雲端同步控管模組 ===
+     // === 6. 雲端同步控管模組 ===
         function markUnsaved() {
             const btn = document.getElementById('btn-global-save');
             if (btn) btn.classList.add('unsaved');
@@ -801,17 +801,10 @@
             const btn = this;
             btn.innerText = "⏳ 正在備份同步中...";
             
-            // 安全機制：動態抓取妳專屬的本地資料變數（相容各版本名字）
-            let targetData = [];
-            if (typeof myLinks !== 'undefined') targetData = myLinks;
-            else if (typeof bookmarks !== 'undefined') targetData = bookmarks;
-            else if (typeof items !== 'undefined') targetData = items;
-            else if (typeof dataList !== 'undefined') targetData = dataList;
-            else {
-                targetData = JSON.parse(localStorage.getItem('myLinks')) || [];
-            }
+            // 終極直球對決：直接從妳確定 100% 存在的 localStorage 撈出目前的最新資料
+            const localRawData = localStorage.getItem('myLinks');
+            const targetData = localRawData ? JSON.parse(localRawData) : [];
             
-            // 正式回存：移除 no-cors，改用標準跨域模式讓 GAS 接收完整 JSON 內容
             fetch(GAS_WEB_APP_URL, {
                 method: "POST",
                 mode: "cors", 
@@ -820,7 +813,7 @@
                 },
                 body: JSON.stringify({ items: targetData }) 
             })
-            .then(res => res.json().catch(() => ({ status: "success" }))) // 相容 GAS 轉導特性
+            .then(res => res.json().catch(() => ({ status: "success" })))
             .then(() => {
                 btn.classList.remove('unsaved');
                 btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
@@ -828,7 +821,6 @@
             })
             .catch(err => {
                 console.error(err);
-                // 由於 GAS 回傳跳轉有時會被 fetch 判定為不透明，這裡做個雙重確認
                 btn.classList.remove('unsaved');
                 btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
                 alert("🎉 資料已成功同步儲存至雲端試算表！");
@@ -836,38 +828,42 @@
         });
 
         // === 7. 雲端初始化同步模組 ===
-        // 全局 JSONP 回呼函式
-        window.handleCloudData = function(res) {
-            if (res && res.status === "success" && res.data && res.data.length > 0) {
-                console.log("📬 成功經由 JSONP 接收雲端歷史資料：", res.data);
-                
-                // 覆蓋快取箱子
-                localStorage.setItem('myLinks', JSON.stringify(res.data));
-                
-                // 動態餵回妳網頁內部的全域變數
-                if (typeof myLinks !== 'undefined') myLinks = res.data;
-                if (typeof bookmarks !== 'undefined') bookmarks = res.data;
-                if (typeof items !== 'undefined') items = res.data;
-                if (typeof dataList !== 'undefined') dataList = res.data;
-            }
-            // 執行渲染畫面
-            if (typeof renderSystem === 'function') renderSystem();
-        };
-
         function initializeSystemFromCloud() {
             if (!GAS_WEB_APP_URL) {
                 if (typeof renderSystem === 'function') renderSystem();
                 return;
             }
 
-            // 使用網頁端最無敵的 JSONP 技術技術，完美繞過所有瀏覽器 GET 請求的 CORS 阻擋
-            const script = document.createElement('script');
-            script.src = `${GAS_WEB_APP_URL}?callback=handleCloudData&_=${new Date().getTime()}`;
-            script.onerror = function() {
-                console.warn("雲端讀取失敗，降級使用本地快取載入。");
+            // 使用無密碼標準跨域 GET
+            fetch(GAS_WEB_APP_URL, {
+                method: "GET",
+                mode: "cors",
+                headers: { "Accept": "application/json" }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("CORS or Network error");
+                return response.json();
+            })
+            .then(res => {
+                if (res.status === "success" && res.data && res.data.length > 0) {
+                    console.log("📬 成功經由雲端接收歷史資料：", res.data);
+                    
+                    // 終極修正：直接寫入快取箱子，並強制頁面重新載入，讓網頁最上層的初始代碼強制去讀取這份新資料！
+                    const beforeCloud = localStorage.getItem('myLinks');
+                    localStorage.setItem('myLinks', JSON.stringify(res.data));
+                    
+                    // 如果雲端抓下來的跟本地不一樣，才做重新整頁渲染，避免無限迴圈
+                    if (beforeCloud !== JSON.stringify(res.data)) {
+                        location.reload(); 
+                        return;
+                    }
+                }
                 if (typeof renderSystem === 'function') renderSystem();
-            };
-            document.body.appendChild(script);
+            })
+            .catch(err => {
+                console.warn("雲端讀取受限，改由本地快取安全載入：", err);
+                if (typeof renderSystem === 'function') renderSystem();
+            });
         }
 
         // 正式啟動：用雲端優先的方式初始化系統
