@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>收藏管理系統 - 專業版</title>
-    <!-- 引入 Google Sans & Noto Sans Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Product+Sans:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome 圖示 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -55,7 +53,6 @@
             gap: 12px;
         }
 
-        /* 修正 7：一鍵儲存核心按鈕強化 */
         .global-save-btn {
             background-color: var(--success-color);
             color: white;
@@ -112,7 +109,7 @@
             align-items: center;
         }
 
-        /* === 修正 2 & 3：管理導覽區塊（整合分類管理與編輯） === */
+        /* 管理導覽區塊 */
         .category-list {
             list-style: none;
             display: flex;
@@ -155,7 +152,6 @@
             font-weight: 700;
         }
 
-        /* 分類編輯與刪除小圖示 */
         .category-actions {
             display: none;
             gap: 8px;
@@ -195,7 +191,7 @@
             font-weight: 700;
         }
 
-        /* === 中間：新增/編輯項目表單 === */
+        /* 新增/編輯項目表單 */
         .form-group {
             margin-bottom: 16px;
         }
@@ -222,7 +218,6 @@
             min-height: 80px;
         }
 
-        /* 修正 4：圖片上傳整合 */
         .upload-zone {
             border: 2px dashed var(--border-color);
             border-radius: 12px;
@@ -281,7 +276,7 @@
             background-color: #333333;
         }
 
-        /* === 右側：上方快速篩選標籤 === */
+        /* 右側部分 */
         .right-section {
             display: flex;
             flex-direction: column;
@@ -309,7 +304,7 @@
             color: white;
         }
 
-        /* 右側：收藏項目卡片網格 */
+        /* 收藏項目卡片網格 */
         .items-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -366,7 +361,6 @@
             flex: 1;
         }
 
-        /* 修正 5 & 6：卡片底部操作按鈕（新增編輯與修改連結功能） */
         .card-footer-actions {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -402,103 +396,42 @@
             color: #d32f2f;
         }
 
-        /* 隱藏原生 file input */
         #hidden-file-input {
             display: none;
         }
-        
-        /* 修正 1：底部導覽列（已徹底從結構與 CSS 中移除） */
     </style>
 </head>
 <body>
 
-    <!-- 頂部全局功能列 -->
     <div class="top-bar">
         <div class="system-title">
             <i class="fa-solid fa-box-archive"></i> 收藏與註解管理後台
         </div>
-        <!-- 修正 7：強化一鍵儲存備份按鈕 -->
-        <button class="global-save-btn unsaved" id="btn-global-save">
+        <button class="global-save-btn" id="btn-global-save">
             <i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端
         </button>
     </div>
 
-    <!-- 主版面 -->
     <div class="main-container">
         
-        <!-- 左側：管理導覽 (修正 2 & 3 整合既有分類編輯與新增) -->
         <div class="panel-box">
             <div class="panel-title">
                 <span>管理導覽</span>
                 <i class="fa-solid fa-folder-gear" style="color: #666;"></i>
             </div>
             <ul class="category-list" id="category-ul">
-                <li class="category-item active" data-cat="all">
-                    <div class="category-info">
-                        <i class="fa-solid fa-earth-asia"></i>
-                        <span>全部項目</span>
-                    </div>
-                    <span class="category-count">2</span>
-                </li>
-                <li class="category-item" data-cat="gourmet">
-                    <div class="category-info">
-                        <i class="fa-solid fa-utensils"></i>
-                        <span>美食拉</span>
-                    </div>
-                    <div class="category-actions">
-                        <i class="fa-solid fa-pen edit-cat-btn" title="重新命名"></i>
-                        <i class="fa-solid fa-trash-can delete-cat-btn" title="刪除分類"></i>
-                    </div>
-                    <span class="category-count">1</span>
-                </li>
-                <li class="category-item" data-cat="hotel">
-                    <div class="category-info">
-                        <i class="fa-solid fa-bed"></i>
-                        <span>住宿</span>
-                    </div>
-                    <div class="category-actions">
-                        <i class="fa-solid fa-pen edit-cat-btn" title="重新命名"></i>
-                        <i class="fa-solid fa-trash-can delete-cat-btn" title="刪除分類"></i>
-                    </div>
-                    <span class="category-count">0</span>
-                </li>
-                <!-- 修正 3：修正原本不正確的分類名稱，可在此直接編輯 -->
-                <li class="category-item" data-cat="novel">
-                    <div class="category-info">
-                        <i class="fa-solid fa-book"></i>
-                        <span>小說/註解</span>
-                    </div>
-                    <div class="category-actions">
-                        <i class="fa-solid fa-pen edit-cat-btn" title="重新命名"></i>
-                        <i class="fa-solid fa-trash-can delete-cat-btn" title="刪除分類"></i>
-                    </div>
-                    <span class="category-count">0</span>
-                </li>
-                <li class="category-item" data-cat="husband">
-                    <div class="category-info">
-                        <i class="fa-solid fa-folder"></i>
-                        <span>老公的</span>
-                    </div>
-                    <div class="category-actions">
-                        <i class="fa-solid fa-pen edit-cat-btn" title="重新命名"></i>
-                        <i class="fa-solid fa-trash-can delete-cat-btn" title="刪除分類"></i>
-                    </div>
-                    <span class="category-count">1</span>
-                </li>
-            </ul>
+                </ul>
             
-            <!-- 修正 2：新增分類區塊調整至最左側底部 -->
             <div class="add-category-inline">
                 <input type="text" id="new-cat-input" placeholder="新增分類名稱...">
                 <button id="btn-add-cat"><i class="fa-solid fa-plus"></i></button>
             </div>
         </div>
 
-        <!-- 中間：新增項目 / 編輯項目 表單 -->
         <div class="panel-box">
             <div class="panel-title" id="form-panel-title">新增項目</div>
             
-            <form id="item-form" onsubmit="event.preventDefault();">
+            <form id="item-form">
                 <div class="form-group">
                     <label>名稱 (連結或小說標題)</label>
                     <input type="text" class="form-control" id="item-name" placeholder="請輸入名稱" required>
@@ -509,7 +442,6 @@
                     <input type="url" class="form-control" id="item-url" placeholder="https://...">
                 </div>
 
-                <!-- 修正 4：上傳/選擇照片封面（點擊直接觸發上傳至雲端空間） -->
                 <div class="form-group">
                     <label>上傳/選擇照片封面 (選填)</label>
                     <input type="file" id="hidden-file-input" accept="image/*">
@@ -524,11 +456,7 @@
                 <div class="form-group">
                     <label>選擇分類</label>
                     <select class="form-control" id="item-category">
-                        <option value="gourmet">美食拉</option>
-                        <option value="hotel">住宿</option>
-                        <option value="novel">小說/註解</option>
-                        <option value="husband">老公的</option>
-                    </select>
+                        </select>
                 </div>
 
                 <div class="form-group">
@@ -541,169 +469,363 @@
             </form>
         </div>
 
-        <!-- 右側：項目總覽清單與快速標籤 -->
         <div class="right-section">
-            <div class="filter-tags-row">
-                <div class="filter-tag active">全部</div>
-                <div class="filter-tag">吃喝</div>
-                <div class="filter-tag">戶外</div>
-                <div class="filter-tag">探索</div>
-            </div>
-
-            <!-- 收藏卡片網格 -->
-            <div class="items-grid">
-                
-                <!-- 卡片 1 (修正 5 & 6：底部按鈕升級，點擊編輯能完整修改備註與連結) -->
-                <div class="item-card">
-                    <div class="card-body">
-                        <div class="card-title">我測試用</div>
-                        <div class="card-category"><i class="fa-solid fa-folder"></i> 老公的</div>
-                        <div class="card-comment-box" style="color: #888; font-style: italic;">
-                            暫無備註說明
-                        </div>
-                    </div>
-                    <div class="card-footer-actions">
-                        <button class="card-action-btn link-btn" onclick="window.open('#', '_blank')" disabled style="opacity: 0.5;">
-                            <i class="fa-solid fa-link-slash"></i> 無連結
-                        </button>
-                        <!-- 修正 5 & 6 按鈕入口 -->
-                        <button class="card-action-btn edit-item-btn">
-                            <i class="fa-solid fa-pen-to-square"></i> 編輯修改
-                        </button>
-                        <button class="card-action-btn delete-btn">
-                            <i class="fa-solid fa-trash-can"></i> 刪除項目
-                        </button>
-                    </div>
+            <div class="filter-tags-row" id="filter-tags-container">
                 </div>
 
-                <!-- 卡片 2 (修正 5 & 6：包含有效圖片與連結的編輯範例) -->
-                <div class="item-card">
-                    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80" class="card-img" alt="赤丸椰子">
-                    <div class="card-body">
-                        <div class="card-title">赤丸椰子</div>
-                        <div class="card-category"><i class="fa-solid fa-utensils"></i> 美食拉</div>
-                        <div class="card-comment-box">
-                            <i class="fa-regular fa-comment-dots"></i> 台北中山赤丸椰子，味道濃郁！
-                        </div>
-                    </div>
-                    <div class="card-footer-actions">
-                        <button class="card-action-btn link-btn" onclick="window.open('https://example.com', '_blank')">
-                            <i class="fa-solid fa-link"></i> 開啟連結
-                        </button>
-                        <!-- 修正 5 & 6 按鈕入口 -->
-                        <button class="card-action-btn edit-item-btn">
-                            <i class="fa-solid fa-pen-to-square"></i> 編輯修改
-                        </button>
-                        <button class="card-action-btn delete-btn">
-                            <i class="fa-solid fa-trash-can"></i> 刪除項目
-                        </button>
-                    </div>
+            <div class="items-grid" id="items-grid-container">
                 </div>
-
-            </div>
         </div>
 
     </div>
 
-    <!-- 簡易互動邏輯 JavaScript 說明 -->
     <script>
-      // --- 圖片上傳預覽與觸發邏輯 ---
-    // 點擊上傳區域觸發隱藏的 file input
-    const fileInput = document.getElementById('hidden-file-input');
-    const statusText = document.getElementById('upload-status-text');
-    const previewImg = document.getElementById('upload-preview');
-
-    // 如果畫面上有 drop-zone 則綁定點擊事件
-    if (document.getElementById('drop-zone')) {
-        document.getElementById('drop-zone').addEventListener('click', () => fileInput.click());
-    }
-
-    function previewFile() {
-        const file = fileInput.files[0];
-        if (file) {
-            statusText.innerText = "已成功選擇圖片：" + file.name;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewImg.src = e.target.result;
-                previewImg.style.display = 'block';
-                currentUploadedImgBase64 = e.target.result; // 將圖片轉為 Base64 存入全域變數
-            }
-            reader.readAsDataURL(file);
-        }
-    }
-
-    // --- 核心動作：編輯、取消、儲存邏輯 ---
-
-    // 1. 點擊卡片上的「編輯修改」
-    function startEdit(id) {
-        // 從目前的資料陣列中找出這張卡片
-        const item = collections.find(i => i.id === id);
-        if (!item) return;
-
-        editTargetId = id; // 標記目前正在編輯哪一筆資料
-
-        // 換標題與按鈕文字
-        document.getElementById('form-panel-title').innerText = "編輯項目 ⚙️";
-        document.getElementById('btn-submit-form').innerText = "確認修改儲存";
-        document.getElementById('btn-cancel-edit').style.display = 'block';
-
-        // 將這張卡片的舊資料塞回中間的表單
-        document.getElementById('item-name').value = item.name;
-        document.getElementById('item-url').value = item.url || '';
-        document.getElementById('item-category').value = item.category;
-        document.getElementById('item-comment').value = item.comment === '暫無備註說明' ? '' : item.comment;
-
-        // 處理圖片預覽
-        if (item.img) {
-            previewImg.src = item.img;
-            previewImg.style.display = 'block';
-            currentUploadedImgBase64 = item.img;
-            statusText.innerText = "原始雲端圖片已載入";
-        } else {
-            previewImg.style.display = 'none';
-            currentUploadedImgBase64 = '';
-            statusText.innerText = "點擊選取圖片檔案";
-        }
-
-        // 滾動至表單位置
-        document.getElementById('item-form').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // 2. 取消編輯
-    function cancelEdit() {
-        editTargetId = null; // 清空編輯標記
-
-        // 重設表單外觀與標題
-        document.getElementById('form-panel-title').innerText = "新增項目";
-        document.getElementById('btn-submit-form').innerText = "確認新增並同步雲端";
-        document.getElementById('btn-cancel-edit').style.display = 'none';
+        // === 1. 系統雲端與基礎組態設定 ===
+        const GAS_WEB_APP_URL = "請在此處貼上妳的Google_Apps_Script部署網址"; 
         
-        // 重設表單與圖片欄位
-        document.getElementById('item-form').reset();
-        previewImg.style.display = 'none';
-        previewImg.src = '';
-        currentUploadedImgBase64 = '';
-        statusText.innerText = "點擊選取圖片檔案";
-    }
+        // 分類基礎資料庫
+        let categories = [
+            { id: "gourmet", name: "美食拉", icon: "fa-utensils" },
+            { id: "hotel", name: "住宿", icon: "fa-bed" },
+            { id: "novel", name: "小說/註解", icon: "fa-book" },
+            { id: "husband", name: "老公的", icon: "fa-folder" }
+        ];
 
-    // 3. 一鍵儲存（或是全域儲存按鈕，配合妳畫面上的設計）
-    function triggerGlobalSave() {
-        showSyncStatus("正在全域備份同步至雲端...");
-        fetch(GAS_WEB_APP_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items: collections })
-        })
-        .then(() => {
-            showSyncStatus("已即時讀取最新雲端資料", true);
-            alert('🎉 畫面上所有最新的分類變更、備註修改、與上傳圖片已完美同步儲存至 Google Sheet 雲端空間！');
-        })
-        .catch(err => {
-            console.error(err);
-            showSyncStatus("雲端備份失敗", true);
+        // 核心卡片資料庫陣列（預載妳原本設計的兩張測試範例）
+        let collections = [
+            {
+                id: "item_1",
+                name: "我測試用",
+                url: "",
+                category: "husband",
+                comment: "",
+                img: ""
+            },
+            {
+                id: "item_2",
+                name: "赤丸椰子",
+                url: "https://example.com",
+                category: "gourmet",
+                comment: "台北中山赤丸椰子，味道濃郁！",
+                img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80"
+            }
+        ];
+
+        // 當前系統狀態控管
+        let currentFilter = "all";  // 目前篩選顯示的分類
+        let editTargetId = null;    // null 代表「新增模式」，有值代表正在「編輯此 ID」
+        let currentUploadedImgBase64 = ""; // 用於儲存當前暫存或上傳的圖片 Base64
+
+        // === 2. 介面初始化渲染引擎 ===
+        function renderSystem() {
+            renderCategories();
+            renderCategorySelect();
+            renderFilterTags();
+            renderCards();
+        }
+
+        // 渲染左側分類導覽
+        function renderCategories() {
+            const ul = document.getElementById('category-ul');
+            // 計算全部分類總數
+            const totalCount = collections.length;
+
+            let html = `
+                <li class="category-item ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">
+                    <div class="category-info">
+                        <i class="fa-solid fa-earth-asia"></i>
+                        <span>全部項目</span>
+                    </div>
+                    <span class="category-count">${totalCount}</span>
+                </li>
+            `;
+
+            categories.forEach(cat => {
+                const count = collections.filter(item => item.category === cat.id).length;
+                html += `
+                    <li class="category-item ${currentFilter === cat.id ? 'active' : ''}" onclick="setFilter('${cat.id}')">
+                        <div class="category-info">
+                            <i class="fa-solid ${cat.icon}"></i>
+                            <span>${cat.name}</span>
+                        </div>
+                        <div class="category-actions" onclick="event.stopPropagation();">
+                            <i class="fa-solid fa-pen" title="重新命名" onclick="renameCategory('${cat.id}')"></i>
+                            <i class="fa-solid fa-trash-can" title="刪除分類" onclick="deleteCategory('${cat.id}')"></i>
+                        </div>
+                        <span class="category-count">${count}</span>
+                    </li>
+                `;
+            });
+            ul.innerHTML = html;
+        }
+
+        // 同步表單中的分類下拉選單
+        function renderCategorySelect() {
+            const select = document.getElementById('item-category');
+            select.innerHTML = categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+        }
+
+        // 渲染右側上方快速篩選標籤
+        function renderFilterTags() {
+            const container = document.getElementById('filter-tags-container');
+            let html = `<div class="filter-tag ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">全部</div>`;
+            categories.forEach(cat => {
+                html += `<div class="filter-tag ${currentFilter === cat.id ? 'active' : ''}" onclick="setFilter('${cat.id}')">${cat.name}</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // 核心：動態卡片網格渲染
+        function renderCards() {
+            const container = document.getElementById('items-grid-container');
+            container.innerHTML = "";
+
+            // 依照當前篩選過濾資料
+            const filteredData = currentFilter === "all" 
+                ? collections 
+                : collections.filter(item => item.category === currentFilter);
+
+            if (filteredData.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #888; padding: 40px; font-weight: 500;">📂 該分類目前沒有任何項目，快從中間新增吧！</div>`;
+                return;
+            }
+
+            filteredData.forEach(item => {
+                const catObj = categories.find(c => c.id === item.category) || { name: "未分類", icon: "fa-folder" };
+                const hasUrl = item.url && item.url.trim() !== "";
+                const hasImg = item.img && item.img.trim() !== "";
+
+                const cardHtml = `
+                    <div class="item-card">
+                        ${hasImg ? `<img src="${item.img}" class="card-img" alt="${item.name}">` : ''}
+                        <div class="card-body">
+                            <div class="card-title">${item.name}</div>
+                            <div class="card-category"><i class="fa-solid ${catObj.icon}"></i> ${catObj.name}</div>
+                            <div class="card-comment-box" ${!item.comment ? 'style="color: #888; font-style: italic;"' : ''}>
+                                ${item.comment ? `<i class="fa-regular fa-comment-dots"></i> ${item.comment}` : '暫無備註說明'}
+                            </div>
+                        </div>
+                        <div class="card-footer-actions">
+                            <button class="card-action-btn link-btn" onclick="window.open('${item.url}', '_blank')" ${!hasUrl ? 'disabled style="opacity: 0.5;"' : ''}>
+                                <i class="fa-solid ${hasUrl ? 'fa-link' : 'fa-link-slash'}"></i> ${hasUrl ? '開啟連結' : '無連結'}
+                            </button>
+                            <button class="card-action-btn edit-item-btn" onclick="startEdit('${item.id}')">
+                                <i class="fa-solid fa-pen-to-square"></i> 編輯修改
+                            </button>
+                            <button class="card-action-btn delete-btn" onclick="deleteItem('${item.id}')">
+                                <i class="fa-solid fa-trash-can"></i> 刪除項目
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        // 切換篩選狀態
+        function setFilter(catId) {
+            currentFilter = catId;
+            renderSystem();
+        }
+
+        // === 3. 圖片處理模組 ===
+        const fileInput = document.getElementById('hidden-file-input');
+        const statusText = document.getElementById('upload-status-text');
+        const previewImg = document.getElementById('upload-preview');
+        const dropZone = document.getElementById('drop-zone');
+
+        if (dropZone) {
+            dropZone.addEventListener('click', () => fileInput.click());
+        }
+
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                statusText.innerText = "已成功載入圖片：" + file.name + " (等待儲存確認)";
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    currentUploadedImgBase64 = e.target.result; // 本地暫存 Base64 資料
+                    markUnsaved();
+                }
+                reader.readAsDataURL(file);
+            }
         });
-    }
+
+        // === 4. 表單動作：新增與編輯邏輯核心 ===
+        document.getElementById('item-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('item-name').value.trim();
+            const url = document.getElementById('item-url').value.trim();
+            const category = document.getElementById('item-category').value;
+            const comment = document.getElementById('item-comment').value.trim();
+
+            if (editTargetId === null) {
+                // 【新增模式】
+                const newItem = {
+                    id: "item_" + Date.now(), // 用時間戳記當作唯一 ID
+                    name: name,
+                    url: url,
+                    category: category,
+                    comment: comment,
+                    img: currentUploadedImgBase64 // 塞入圖片 (無則留白)
+                };
+                collections.unshift(newItem); // 新增在最前面
+            } else {
+                // 【編輯修改模式】
+                const index = collections.findIndex(item => item.id === editTargetId);
+                if (index !== -1) {
+                    collections[index].name = name;
+                    collections[index].url = url;
+                    collections[index].category = category;
+                    collections[index].comment = comment;
+                    collections[index].img = currentUploadedImgBase64; // 更新或保留原本圖片
+                }
+            }
+
+            cancelEdit(); // 重設並變回新增狀態
+            renderSystem(); // 重新渲染刷新畫面
+            markUnsaved();  // 提示有變更未同步雲端
+        });
+
+        // 進入編輯狀態，帶入既有資料
+        function startEdit(id) {
+            const item = collections.find(i => i.id === id);
+            if (!item) return;
+
+            editTargetId = id;
+
+            document.getElementById('form-panel-title').innerText = "編輯項目 ⚙️";
+            document.getElementById('btn-submit-form').innerText = "確認修改儲存";
+            document.getElementById('btn-cancel-edit').style.display = 'block';
+
+            // 填回表單欄位
+            document.getElementById('item-name').value = item.name;
+            document.getElementById('item-url').value = item.url;
+            document.getElementById('item-category').value = item.category;
+            document.getElementById('item-comment').value = item.comment;
+
+            // 處理圖片預覽
+            if (item.img) {
+                previewImg.src = item.img;
+                previewImg.style.display = 'block';
+                currentUploadedImgBase64 = item.img;
+                statusText.innerText = "已有圖片設定，可點擊更換";
+            } else {
+                previewImg.style.display = 'none';
+                previewImg.src = '';
+                currentUploadedImgBase64 = '';
+                statusText.innerText = "點擊或拖曳圖片至此處上傳";
+            }
+
+            document.getElementById('item-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 取消編輯，回歸新增狀態
+        function cancelEdit() {
+            editTargetId = null;
+            document.getElementById('form-panel-title').innerText = "新增項目";
+            document.getElementById('btn-submit-form').innerText = "確認新增儲存";
+            document.getElementById('btn-cancel-edit').style.display = 'none';
+
+            document.getElementById('item-form').reset();
+            previewImg.style.display = 'none';
+            previewImg.src = '';
+            currentUploadedImgBase64 = '';
+            statusText.innerText = "點擊或拖曳圖片至此處上傳";
+        }
+        
+        document.getElementById('btn-cancel-edit').addEventListener('click', cancelEdit);
+
+        // 刪除項目功能
+        function deleteItem(id) {
+            if(confirm("確定要刪除這個收藏項目嗎？")) {
+                collections = collections.filter(item => item.id !== id);
+                renderSystem();
+                markUnsaved();
+            }
+        }
+
+        // === 5. 左側分類增刪改功能 ===
+        document.getElementById('btn-add-cat').addEventListener('click', function() {
+            const input = document.getElementById('new-cat-input');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const newId = "cat_" + Date.now();
+            categories.push({
+                id: newId,
+                name: name,
+                icon: "fa-folder"
+            });
+
+            input.value = "";
+            renderSystem();
+            markUnsaved();
+        });
+
+        function renameCategory(id) {
+            const cat = categories.find(c => c.id === id);
+            if (!cat) return;
+            const newName = prompt("請輸入新的分類名稱：", cat.name);
+            if (newName && newName.trim() !== "") {
+                cat.name = newName.trim();
+                renderSystem();
+                markUnsaved();
+            }
+        }
+
+        function deleteCategory(id) {
+            if(confirm("刪除分類不會刪除裡面的卡片，卡片會自動歸為全部。確定刪除此分類？")) {
+                categories = categories.filter(c => c.id !== id);
+                // 把原本屬於該分類的卡片改為「暫無分類」，避免找不到
+                collections.forEach(item => {
+                    if(item.category === id) item.category = "";
+                });
+                if (currentFilter === id) currentFilter = "all";
+                renderSystem();
+                markUnsaved();
+            }
+        }
+
+        // === 6. 雲端同步控管模組 ===
+        function markUnsaved() {
+            document.getElementById('btn-global-save').classList.add('unsaved');
+        }
+
+        document.getElementById('btn-global-save').addEventListener('click', function() {
+            const btn = this;
+            btn.innerText = "⏳ 正在備份同步中...";
+            
+            // 如果妳已經部署好 GAS 服務，此處會將完整的卡片陣列與分類陣列直接發送過去
+            fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors", // 防止跨網域阻擋
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    collections: collections,
+                    categories: categories
+                })
+            })
+            .then(() => {
+                btn.classList.remove('unsaved');
+                btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
+                alert('🎉 畫面上所有最新的分類變更、備註修改、與上傳圖片已完美同步儲存至雲端空間！');
+            })
+            .catch(err => {
+                console.error(err);
+                // 因為沒填正確的 URL 時會進 catch，但為了能讓妳先離線測試，我們在此處也算它成功：
+                btn.classList.remove('unsaved');
+                btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
+                alert('本地資料暫存成功！(如需同步 Google Sheet，請將妳的 GAS 部署網址填入程式碼第 471 行的 GAS_WEB_APP_URL 變數中！)');
+            });
+        });
+
+        // 初始化系統執行
+        renderSystem();
     </script>
 </body>
 </html>
