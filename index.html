@@ -1,485 +1,1165 @@
 <!DOCTYPE html>
+
 <html lang="zh-TW">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>收藏管理系統</title>
+
+    <title>收藏管理系統 - 欄位對調與雲端串接版</title>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     
+
     <style>
+
         :root {
+
             --bg-color: #f7f2ea;
+
             --card-bg: #fffbf5;
+
             --text-color: #1a1a1a;
+
             --border-color: #000000;
+
             --primary-accent: #ff7657;
+
             --secondary-accent: #ffd275;
+
             --success-color: #4caf50;
+
             --shadow-style: 4px 4px 0px #000000;
+
             --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+
         }
+
+
 
         * {
+
             box-sizing: border-box;
+
             margin: 0;
+
             padding: 0;
+
         }
+
+
 
         body {
+
             background-color: var(--bg-color);
+
             font-family: var(--font-family);
+
             color: var(--text-color);
+
             padding: 20px;
+
             line-height: 1.4;
+
         }
+
+
 
         /* 頂部全局功能列 */
+
         .top-bar {
+
             display: flex;
+
             justify-content: space-between;
+
             align-items: center;
+
             margin-bottom: 24px;
+
             padding: 10px;
+
             background-color: white;
+
             border: 2px solid var(--border-color);
+
             border-radius: 12px;
+
             box-shadow: 3px 3px 0px #000;
+
         }
+
+
 
         .system-title {
+
             font-size: 20px;
+
             font-weight: 700;
+
             display: flex;
+
             align-items: center;
+
             gap: 10px;
+
         }
+
+
 
         .sync-status {
+
             font-size: 14px;
+
             font-weight: bold;
+
             color: #666;
+
             display: flex;
+
             align-items: center;
+
             gap: 6px;
+
         }
+
+
 
         /* 核心佈局：Flex 佈局 */
+
         .wrapper {
+
             display: flex;
+
             width: 100%;
+
             gap: 20px;
+
             align-items: flex-start;
+
         }
+
+
 
         /* 左側欄：固定 400px（新增項目表單） */
+
         .left-col {
+
             width: 400px;
+
             flex-shrink: 0;
+
         }
+
+
 
         /* 中間欄：固定 280px（管理導覽清單） */
+
         .mid-col {
+
             width: 280px;
+
             flex-shrink: 0;
+
         }
+
+
 
         /* 右側欄：卡片牆 */
+
         .right-col {
+
             flex-grow: 1;
+
             min-width: 0; 
+
             display: flex;
+
             flex-direction: column;
+
             gap: 20px;
+
         }
+
+
 
         /* 通用區塊卡片外觀 */
+
         .panel-box {
+
             background-color: var(--card-bg);
+
             border: 2px solid var(--border-color);
+
             border-radius: 16px;
+
             padding: 20px;
+
             box-shadow: var(--shadow-style);
+
             margin-bottom: 20px;
+
         }
+
+
 
         .panel-title {
+
             font-size: 16px;
+
             font-weight: 700;
+
             margin-bottom: 16px;
+
             padding-bottom: 8px;
+
             border-bottom: 2px solid var(--border-color);
+
             display: flex;
+
             justify-content: space-between;
+
             align-items: center;
+
         }
+
+
 
         /* 管理導覽清單 */
+
         .category-list {
+
             list-style: none;
+
             padding: 0;
+
             margin: 0;
+
         }
+
+
 
         .category-item {
+
             display: flex;
+
             justify-content: space-between;
+
             align-items: center;
+
             padding: 10px 12px;
+
             border-radius: 8px;
+
             border: 2px solid transparent;
+
             cursor: pointer;
+
             font-weight: 500;
+
             margin-bottom: 6px;
+
             background-color: white;
+
             box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+
         }
+
+
 
         .category-item.active {
+
             background-color: var(--secondary-accent);
+
             border-color: var(--border-color);
+
             box-shadow: 2px 2px 0px #000;
+
         }
+
+
 
         .category-left-part {
+
             display: flex;
+
             align-items: center;
+
             gap: 8px;
+
             font-weight: 700;
+
         }
+
+
 
         .category-right-part {
+
             display: flex;
+
             align-items: center;
+
             gap: 8px;
+
         }
+
+
 
         .category-count {
+
             background-color: var(--border-color);
+
             color: white;
+
             padding: 2px 8px;
+
             border-radius: 12px;
+
             font-size: 11px;
+
             font-weight: 700;
+
         }
+
+
 
         .category-actions-tools {
+
             display: flex;
+
             gap: 4px;
+
         }
+
         .category-actions-tools i {
+
             color: #666;
+
             padding: 4px;
+
             border-radius: 4px;
+
         }
+
         .category-actions-tools i:hover {
+
             color: var(--primary-accent);
+
             background-color: #eee;
+
         }
+
+
 
         .add-category-inline {
+
             margin-top: 12px;
+
             display: flex;
+
             gap: 6px;
+
         }
+
         .add-category-inline input {
+
             flex: 1;
+
             padding: 8px;
+
             border: 2px solid var(--border-color);
+
             border-radius: 6px;
+
         }
+
         .add-category-inline button {
+
             background-color: var(--secondary-accent);
+
             border: 2px solid var(--border-color);
+
             border-radius: 6px;
+
             padding: 0 12px;
+
             cursor: pointer;
+
             font-weight: 700;
+
         }
+
+
 
         /* 表單區 */
+
         .form-group {
+
             margin-bottom: 12px;
+
         }
+
         .form-group label {
+
             display: block;
+
             font-weight: 700;
+
             font-size: 13px;
+
             margin-bottom: 6px;
+
         }
+
         .form-control {
+
             width: 100%;
+
             padding: 10px;
+
             border: 2px solid var(--border-color);
+
             border-radius: 8px;
+
             font-size: 14px;
+
             background-color: white;
+
         }
+
+
 
         .upload-zone {
+
             border: 2px dashed var(--border-color);
+
             border-radius: 8px;
+
             padding: 12px;
+
             text-align: center;
+
             background-color: white;
+
             cursor: pointer;
+
         }
+
         .upload-preview {
+
             width: 100%;
+
             max-height: 100px;
+
             object-fit: cover;
+
             margin-top: 8px;
+
             display: none;
+
             border: 1px solid #000;
+
             border-radius: 4px;
+
         }
+
         .cloud-link {
+
             display: inline-block;
+
             margin-top: 6px;
+
             font-size: 12px;
+
             color: #0066cc;
+
             text-decoration: none;
+
         }
+
+
 
         .submit-btn {
+
             width: 100%;
+
             background-color: var(--border-color);
+
             color: white;
+
             padding: 12px;
+
             border: none;
+
             border-radius: 8px;
+
             font-size: 15px;
+
             font-weight: 700;
+
             cursor: pointer;
+
             margin-top: 6px;
+
         }
+
+
 
         /* 右側篩選標籤 */
+
         .filter-tags-row {
+
             display: flex;
+
             gap: 6px;
+
             flex-wrap: wrap;
+
             background-color: white;
+
             padding: 10px;
+
             border: 2px solid var(--border-color);
+
             border-radius: 12px;
+
         }
+
         .filter-tag {
+
             background-color: #fff;
+
             border: 2px solid var(--border-color);
+
             padding: 4px 12px;
+
             border-radius: 12px;
+
             font-size: 13px;
+
             font-weight: 700;
+
             cursor: pointer;
+
         }
+
         .filter-tag.active {
+
             background-color: var(--border-color);
+
             color: white;
+
         }
+
+
 
         /* 右側卡片網格 */
+
         .items-grid {
+
             display: flex;
+
             flex-wrap: wrap;
+
             gap: 16px;
+
             width: 100%;
+
         }
+
+
 
         .item-card {
+
             background-color: var(--card-bg);
+
             border: 2px solid var(--border-color);
+
             border-radius: 12px;
+
             width: calc(50% - 8px); 
+
             min-width: 250px;
+
             box-shadow: 3px 3px 0px #000;
+
             display: flex;
+
             flex-direction: column;
+
             overflow: hidden;
+
         }
+
+
 
         .card-img {
+
             width: 100%;
+
             height: 140px;
+
             object-fit: cover;
+
             border-bottom: 2px solid var(--border-color);
+
         }
+
+
 
         .card-body {
+
             padding: 12px;
+
             flex-grow: 1;
+
         }
+
         .card-title {
+
             font-size: 15px;
+
             font-weight: 700;
+
             margin-bottom: 4px;
+
         }
+
         .card-category {
+
             font-size: 12px;
+
             color: #666;
+
             font-weight: bold;
+
             margin-bottom: 6px;
+
         }
+
         .card-comment-box {
+
             background-color: white;
+
             border: 2px solid var(--border-color);
+
             border-radius: 6px;
+
             padding: 8px;
+
             font-size: 13px;
+
             white-space: pre-wrap;
+
         }
+
+
 
         .card-footer-actions {
+
             display: flex;
+
             border-top: 2px solid var(--border-color);
+
             background-color: white;
+
         }
+
         .card-action-btn {
+
             flex: 1;
+
             border: none;
+
             background: none;
+
             padding: 10px 4px;
+
             font-size: 12px;
+
             font-weight: 700;
+
             cursor: pointer;
+
             text-align: center;
+
             text-decoration: none;
+
             color: #1a1a1a;
+
         }
+
         .card-action-btn:not(:last-child) {
+
             border-right: 2px solid var(--border-color);
+
         }
+
         .card-action-btn:hover {
+
             background-color: #f5f5f5;
+
         }
+
         .card-action-btn.delete-btn:hover {
+
             background-color: #fff0f0;
+
             color: red;
+
         }
+
+
 
         #hidden-file-input {
+
             display: none;
+
         }
+
     </style>
+
 </head>
+
 <body>
 
+
+
     <div class="top-bar">
-    <div class="system-title"><i class="fa-solid fa-box-archive"></i> 收藏與註解管理後台</div>
-    <div class="sync-status" id="sync-status-text"><i class="fa-solid fa-cloud"></i> 系統就緒</div>
-</div>
 
-<div class="wrapper">
-    <div class="left-col">
-        <div class="panel-box">
-            <div class="panel-title">管理導覽</div>
-            <ul class="category-list" id="category-ul"></ul>
-            <div class="add-category-inline">
-                <input type="text" id="new-cat-input" placeholder="新分類名稱">
-                <button onclick="addNewCategory()"><i class="fa-solid fa-plus"></i></button>
+        <div class="system-title">
+
+            <i class="fa-solid fa-box-archive"></i> 收藏與註解管理後台
+
+        </div>
+
+        <div class="sync-status" id="sync-status-text">
+
+            <i class="fa-solid fa-cloud"></i> 雲端連線中...
+
+        </div>
+
+    </div>
+
+
+
+    <div class="wrapper">
+
+        
+
+        <div class="left-col">
+
+            <div class="panel-box">
+
+                <div class="panel-title" id="form-panel-title">新增項目</div>
+
+                <form id="item-form" onsubmit="saveItem(event)">
+
+                    <div class="form-group">
+
+                        <label>名稱 (小說標題/地點)</label>
+
+                        <input type="text" class="form-control" id="item-name" required placeholder="請輸入名稱">
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>連結網址 (可留白)</label>
+
+                        <input type="url" class="form-control" id="item-url" placeholder="https://...">
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>照片封面 (可留白)</label>
+
+                        <input type="file" id="hidden-file-input" accept="image/*" onchange="previewFile()">
+
+                        <div class="upload-zone" onclick="document.getElementById('hidden-file-input').click()">
+
+                            <i class="fa-solid fa-image" style="font-size:20px; color:#666;"></i>
+
+                            <p id="upload-status-text" style="font-size:12px;">點擊選取圖片檔案</p>
+
+                            <img id="upload-preview" class="upload-preview">
+
+                        </div>
+
+                        <a href="https://drive.google.com/drive/folders/1EesduTG9JQjmlm0e3JGZVQcGm_7yj7Ut" class="cloud-link" target="_blank"><i class="fa-solid fa-images"></i> 開啟雲端硬碟相簿</a>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>選擇分類</label>
+
+                        <select class="form-control" id="item-category"></select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>小註解 | Comments</label>
+
+                        <textarea class="form-control" id="item-comment" rows="4" placeholder="寫下妳的筆記..."></textarea>
+
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="btn-submit-form">確認新增並同步雲端</button>
+
+                    <button type="button" class="submit-btn" id="btn-cancel-edit" style="background-color:#888; display:none;" onclick="cancelEdit()">取消編輯</button>
+
+                </form>
+
             </div>
+
         </div>
-    </div>
 
-    <div class="mid-col">
-        <div class="panel-box">
-            <div class="panel-title">新增項目</div>
-            <form id="item-form" onsubmit="event.preventDefault();">
-                <div class="form-group">
-                    <label>名稱</label>
-                    <input type="text" class="form-control" id="item-name" placeholder="輸入名稱">
+
+
+        <div class="mid-col">
+
+            <div class="panel-box">
+
+                <div class="panel-title">管理導覽</div>
+
+                <ul class="category-list" id="category-ul">
+
+                    </ul>
+
+                <div class="add-category-inline">
+
+                    <input type="text" id="new-cat-input" placeholder="加新分類...">
+
+                    <button onclick="addNewCategory()"><i class="fa-solid fa-plus"></i></button>
+
                 </div>
-                <div class="form-group">
-                    <label>圖片網址 (建議使用連結)</label>
-                    <input type="text" class="form-control" id="item-img" placeholder="輸入圖片網址">
-                </div>
-                <div class="form-group">
-                    <label>選擇分類</label>
-                    <select class="form-control" id="item-category"></select>
-                </div>
-                <div class="form-group">
-                    <label>小註解</label>
-                    <textarea class="form-control" id="item-comment" rows="3"></textarea>
-                </div>
-                <button type="button" class="submit-btn" style="background:#555" onclick="saveToLocal()">僅存本地</button>
-                <button type="button" class="submit-btn" style="background:#ff7657" onclick="syncToCloud()">同步至雲端</button>
-            </form>
+
+            </div>
+
         </div>
+
+
+
+        <div class="right-col">
+
+            <div class="filter-tags-row" id="filter-tags-container"></div>
+
+            <div class="items-grid" id="items-grid-container"></div>
+
+        </div>
+
+
+
     </div>
 
-    <div class="right-col">
-        <div class="filter-tags-row" id="filter-tags-container"></div>
-        <div class="items-grid" id="items-grid-container"></div>
-    </div>
-</div>
 
-<script>
-    // 基礎變數設定
-    let collections = JSON.parse(localStorage.getItem('my_data')) || [];
+
+   <script>
+
+    // ⚠️【請確認網址正確】
+
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWgfzw6d_Kk5osOblW1_azjz4sDelYnTj6ilTu9y1sxi6kVF_2MVOby9h7ndJQ47K80Q/exec";
+
+    let collections = [];
+
     let categories = ['美食拉', '住宿', '小說/註解', '老公的', '媽媽的'];
+
     let currentFilter = '全部';
 
-    // 初始化介面
-    function initUI() {
-        // 渲染分類導覽
-        const nav = document.getElementById('category-ul');
-        nav.innerHTML = categories.map(cat => `
-            <li class="category-item" onclick="setFilter('${cat}')">
-                <div class="category-left-part">${cat}</div>
-                <div class="category-right-part"><i class="fa-solid fa-trash" onclick="event.stopPropagation(); deleteCategory('${cat}')"></i></div>
-            </li>`).join('');
+    let editTargetId = null;
 
-        // 渲染分類下拉選單
-        document.getElementById('item-category').innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-        
-        // 渲染右側卡片
-        const display = document.getElementById('items-grid-container');
-        let filtered = currentFilter === '全部' ? collections : collections.filter(i => i.category === currentFilter);
-        display.innerHTML = filtered.map(item => `
-            <div class="item-card">
-                <img src="${item.img || 'https://via.placeholder.com/250'}" class="card-img">
-                <div class="card-body">
-                    <div class="card-title">${item.name}</div>
-                    <div class="card-comment-box">${item.comment}</div>
-                </div>
-            </div>`).join('');
-    }
+    let currentUploadedImgBase64 = '';
 
-    // 新增分類功能
-    function addNewCategory() {
-        const input = document.getElementById('new-cat-input');
-        if(input.value && !categories.includes(input.value)) {
-            categories.push(input.value);
-            input.value = '';
+
+
+    // 1. 頁面載入時讀取
+
+    window.addEventListener("DOMContentLoaded", () => {
+
+        fetchFromCloud();
+
+    });
+
+
+
+    // 2. 讀取雲端資料 (將原本在 script 外面的函式移進來)
+
+    function fetchFromCloud() {
+
+        showSyncStatus("雲端資料同步中...");
+
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("這裡請換成")) {
+
+            showSyncStatus("尚未設定後端網址", true);
+
             initUI();
+
+            return;
+
         }
+
+
+
+        fetch(GAS_WEB_APP_URL)
+
+            .then(res => res.json())
+
+            .then(result => {
+
+                if (result.status === "success" && result.data) {
+
+                    collections = result.data.map(row => ({
+
+                        id: row.id,
+
+                        name: row.name,
+
+                        url: row.url,
+
+                        img: row.imageUrl,
+
+                        category: row.category,
+
+                        comment: row.notes || '暫無備註說明'
+
+                    }));
+
+                    
+
+                    collections.forEach(item => {
+
+                        if (item.category && !categories.includes(item.category)) {
+
+                            categories.push(item.category);
+
+                        }
+
+                    });
+
+                    showSyncStatus("已即時讀取最新雲端資料", true);
+
+                    initUI();
+
+                } else {
+
+                    showSyncStatus("讀取失敗", true);
+
+                    initUI();
+
+                }
+
+            })
+
+            .catch(err => {
+
+                console.error(err);
+
+                showSyncStatus("連線中斷，切換至本地暫存模式", true);
+
+                initUI();
+
+            });
+
     }
 
-    // 本地儲存 (不連線)
-    function saveToLocal() {
-        const newItem = {
-            name: document.getElementById('item-name').value,
-            img: document.getElementById('item-img').value,
-            category: document.getElementById('item-category').value,
-            comment: document.getElementById('item-comment').value
-        };
-        collections.unshift(newItem);
-        localStorage.setItem('my_data', JSON.stringify(collections));
+
+
+    // --- 以下為您原本所有的核心功能函式 ---
+
+    function initUI() {
+
+        renderCategories();
+
+        renderFilterTags();
+
+        renderCards();
+
+    }
+
+
+
+    function showSyncStatus(msg, isDone) { 
+
+        const el = document.getElementById('sync-status-text');
+
+        if(el) el.innerText = msg; 
+
+    }
+
+
+
+    function renderCategories() {
+
+        const container = document.getElementById('category-ul');
+
+        if(!container) return;
+
+        const allActive = currentFilter === '全部' ? 'active' : '';
+
+        let html = `<li class="category-item ${allActive}" onclick="setFilter('全部')">
+
+                        <div class="category-left-part"><i class="fa-solid fa-earth-asia"></i> <span>全部項目</span></div>
+
+                        <div class="category-right-part"><span class="category-count">${collections.length}</span></div>
+
+                    </li>`;
+
+
+
+        categories.forEach(cat => {
+
+            const count = collections.filter(item => item.category === cat).length;
+
+            const isActive = currentFilter === cat ? 'active' : '';
+
+            const icon = cat === '美食拉' ? 'fa-utensils' : (cat === '住宿' ? 'fa-bed' : (cat === '小說/註解' ? 'fa-book' : 'fa-folder'));
+
+            html += `<li class="category-item ${isActive}" onclick="setFilter('${cat}')">
+
+                        <div class="category-left-part"><i class="fa-solid ${icon}"></i> <span>${cat}</span></div>
+
+                        <div class="category-right-part">
+
+                            <div class="category-actions-tools">
+
+                                <i class="fa-solid fa-pen" onclick="event.stopPropagation(); renameCategory('${cat}')"></i>
+
+                                <i class="fa-solid fa-trash-can" onclick="event.stopPropagation(); deleteCategory('${cat}')"></i>
+
+                            </div>
+
+                            <span class="category-count">${count}</span>
+
+                        </div>
+
+                    </li>`;
+
+        });
+
+        container.innerHTML = html;
+
+        const select = document.getElementById('item-category');
+
+        if(select) select.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+    }
+
+
+
+    function renderFilterTags() {
+
+        const container = document.getElementById('filter-tags-container');
+
+        if(!container) return;
+
+        const tags = ['全部', ...categories];
+
+        container.innerHTML = tags.map(tag => {
+
+            const isActive = currentFilter === tag ? 'active' : '';
+
+            return `<div class="filter-tag ${isActive}" onclick="setFilter('${tag}')">${tag}</div>`;
+
+        }).join('');
+
+    }
+
+
+
+    function setFilter(cat) {
+
+        currentFilter = cat;
+
         initUI();
-        alert("已儲存至本地！");
+
     }
 
-    // 同步雲端
-    function syncToCloud() {
-        document.getElementById('sync-status-text').innerText = "同步中...";
-        // 這裡填入您原本的 fetch 邏輯
-        alert("已發送至雲端試算表");
-        document.getElementById('sync-status-text').innerText = "雲端同步完成";
+
+
+    function saveItem(event) {
+
+        event.preventDefault();
+
+        showSyncStatus("正在傳送至雲端試算表...");
+
+        const name = document.getElementById('item-name').value.trim();
+
+        const url = document.getElementById('item-url').value.trim();
+
+        const category = document.getElementById('item-category').value;
+
+        const comment = document.getElementById('item-comment').value.trim();
+
+
+
+        let targetItem;
+
+        if (editTargetId === null) {
+
+            targetItem = { id: "ID_" + Date.now(), name, url, img: currentUploadedImgBase64, category, comment: comment || '暫無備註說明' };
+
+            collections.unshift(targetItem);
+
+        } else {
+
+            targetItem = collections.find(item => item.id === editTargetId);
+
+            if (targetItem) {
+
+                targetItem.name = name; targetItem.url = url; targetItem.category = category;
+
+                targetItem.comment = comment || '暫無備註說明';
+
+                if (currentUploadedImgBase64) targetItem.img = currentUploadedImgBase64;
+
+            }
+
+        }
+
+        initUI(); 
+
+        pushItemToCloud(targetItem);
+
+        cancelEdit();
+
     }
 
-    function setFilter(cat) { currentFilter = cat; initUI(); }
-    
-    // 啟動
-    initUI();
+
+
+    function pushItemToCloud(item) {
+
+        // 請確保您的 Apps Script doPost 有正確處理 CORS
+
+        fetch(GAS_WEB_APP_URL, {
+
+            method: "POST",
+
+            headers: { "Content-Type": "application/json" },
+
+            body: JSON.stringify({ items: collections })
+
+        })
+
+        .then(() => showSyncStatus("已同步備份至 Google 試算表！", true))
+
+        .catch(err => { console.error(err); showSyncStatus("雲端備份失敗", true); });
+
+    }
+
+
+
+    // ... (其他原有的 startEdit, cancelEdit, deleteCard, renderCards 等函式請保留在下方) ...
+
+    // 請確認這些函式都在這個 </script> 標籤內
+
 </script>
+
 </body>
+
 </html>
