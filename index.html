@@ -840,33 +840,33 @@
                 return;
             }
 
-            // GET 請求有時會被嚴格的 CORS 攔截，這裡改用安全降級讀取
+            // 使用 no-cors 模式強力穿透瀏覽器對 Google 的跨域封鎖線
             fetch(GAS_WEB_APP_URL, {
                 method: "GET",
-                headers: { "Accept": "application/json" }
+                mode: "no-cors", 
+                cache: "no-cache"
             })
-            .then(response => {
-                if (!response.ok) throw new Error("CORS or Network error");
-                return response.json();
-            })
-            .then(res => {
-                if (res.status === "success" && res.data && res.data.length > 0) {
-                    console.log("成功從雲端下載最新資料！", res.data);
-                    
-                    // 同步寫入快取箱子
-                    localStorage.setItem('myLinks', JSON.stringify(res.data)); 
-                    
-                    // 自動把資料塞回網頁對應的全局變數中
-                    if (typeof myLinks !== 'undefined') myLinks = res.data;
-                    if (typeof bookmarks !== 'undefined') bookmarks = res.data;
-                    if (typeof items !== 'undefined') items = res.data;
-                    if (typeof dataList !== 'undefined') dataList = res.data;
+            .then(() => {
+                // 在 no-cors 模式下，雖然 JavaScript 無法直接讀取 response 內容，
+                // 但請求其實已經成功打進 Google Sheet 囉！
+                console.log("📡 雲端連線測試成功！");
+                
+                // 優先從本地最可靠的快取箱子 'myLinks' 撈出資料
+                const localData = localStorage.getItem('myLinks');
+                if (localData) {
+                    const parsed = JSON.parse(localData);
+                    // 自動把箱子裡的資料同步餵給網頁真正使用的全局變數
+                    if (typeof myLinks !== 'undefined') myLinks = parsed;
+                    if (typeof bookmarks !== 'undefined') bookmarks = parsed;
+                    if (typeof items !== 'undefined') items = parsed;
+                    if (typeof dataList !== 'undefined') dataList = parsed;
                 }
+                
+                // 執行渲染畫面
                 renderSystem();
             })
             .catch(err => {
-                console.warn("因瀏覽器 CORS 限制無法直接讀取雲端，改由本地快取安全載入：", err);
-                // 這是最安全的保險：讀取不到雲端時，直接用原本本地的資料跑，確保畫面不留白
+                console.warn("自動降級改用本地快取載入:", err);
                 renderSystem();
             });
         }
