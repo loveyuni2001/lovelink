@@ -824,9 +824,43 @@ fetch(GAS_WEB_APP_URL, {
   alert("❌ 同步失敗，請檢查網路連線或 GAS 網址是否正確。");
 });
         });
+// === 7. 雲端初始化同步模組 ===
+        function initializeSystemFromCloud() {
+            // 如果連網址都沒填，就直接用本地原本的資料渲染
+            if (!GAS_WEB_APP_URL) {
+                renderSystem();
+                return;
+            }
 
-        // 初始化系統執行
-        renderSystem();
+            // 網頁一打開，先溫柔地去跟 Google Sheet 說：給我最新的資料
+            fetch(GAS_WEB_APP_URL)
+                .then(response => {
+                    if (!response.ok) throw new Error("網路回應不成功");
+                    return response.json();
+                })
+                .then(res => {
+                    if (res.status === "success" && res.data && res.data.length > 0) {
+                        console.log("成功從雲端下載最新資料！", res.data);
+                        
+                        // 關鍵：將雲端撈到的試算表資料，同步覆蓋回妳網頁的變數中
+                        // (請確認妳網頁存資料的陣列變數是叫 items，如果叫 bookmarks 或別的請將 items 改掉)
+                        items = res.data;
+                        
+                        // 同時備份一份在本地快取
+                        localStorage.setItem('bookmarks', JSON.stringify(items)); 
+                    }
+                    // 不管雲端有沒有抓到新東西，最後都執行渲染把卡片畫出來
+                    renderSystem();
+                })
+                .catch(err => {
+                    console.error("讀取雲端失敗或超時，自動降級改用本地快取載入:", err);
+                    // 萬一沒網卡或 Google 沒回應，依然要讓網頁看得到東西
+                    renderSystem();
+                });
+        }
+
+        // 正式啟動：用雲端優先的方式初始化系統
+        initializeSystemFromCloud();
     </script>
 </body>
 </html>
