@@ -797,75 +797,75 @@
             if (btn) btn.classList.add('unsaved');
         }
 
+        // 全局儲存回呼函式
+        window.handleCloudSaveResponse = function(res) {
+            const btn = document.getElementById('btn-global-save');
+            if (btn) {
+                btn.classList.remove('unsaved');
+                btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
+            }
+            if (res && res.status === "success") {
+                alert("🎉 資料已成功完美同步儲存至雲端試算表！");
+            } else {
+                alert("❌ 同步失敗：" + (res ? res.message : "未知錯誤"));
+            }
+        };
+
         document.getElementById('btn-global-save').addEventListener('click', function() {
             const btn = this;
             btn.innerText = "⏳ 正在備份同步中...";
             
-            // 直球對決：從快取箱子撈資料，如果抓不到則自動降級相容全域變數
-            let targetData = [];
+            // 1. 直接撈取快取箱子 'myLinks' 的最新資料
             const localRawData = localStorage.getItem('myLinks');
-            if (localRawData) {
-                targetData = JSON.parse(localRawData);
-            } else if (typeof myLinks !== 'undefined') {
-                targetData = myLinks;
-            }
+            const targetData = localRawData ? JSON.parse(localRawData) : [];
             
-            // 完全複製智慧任務成功的 POST 請求設定
-            fetch(GAS_WEB_APP_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                },
-                body: JSON.stringify({ items: targetData }) // 後端已做好陣列相容
-            })
-            .then(res => res.text()) // 比照成功範本接收純文字
-            .then(text => {
-                console.log("雲端同步結果:", text);
+            // 2. 將資料編碼，利用 JSONP 技術打包發送出去
+            const encodedData = encodeURIComponent(JSON.stringify(targetData));
+            const script = document.createElement('script');
+            script.src = `${GAS_WEB_APP_URL}?action=save&data=${encodedData}&callback=handleCloudSaveResponse&_=${new Date().getTime()}`;
+            
+            script.onerror = function() {
                 btn.classList.remove('unsaved');
                 btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
-                alert("🎉 資料已成功同步儲存至雲端試算表！");
-            })
-            .catch(err => {
-                console.error("同步至雲端時發生錯誤:", err);
-                // 為了防範 Google 轉導時的預檢認知誤差，按鈕依舊恢復，確保使用體驗
-                btn.classList.remove('unsaved');
-                btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
-                alert("🎉 資料儲存完成並已同步雲端！");
-            });
+                alert("❌ 網路連線異常，請重新再試。");
+            };
+            
+            document.body.appendChild(script);
         });
 
         // === 7. 雲端初始化同步模組 ===
+        // 全局讀取回呼函式
+        window.handleCloudData = function(res) {
+            if (res && res.status === "success" && res.data && res.data.length > 0) {
+                console.log("📬 成功經由 JSONP 接收雲端歷史資料：", res.data);
+                
+                // 強制覆蓋本地快取
+                localStorage.setItem('myLinks', JSON.stringify(res.data));
+                
+                // 動態同步給所有網頁內可能用到的全局變數名
+                if (typeof myLinks !== 'undefined') myLinks = res.data;
+                if (typeof bookmarks !== 'undefined') bookmarks = res.data;
+                if (typeof items !== 'undefined') items = res.data;
+                if (typeof dataList !== 'undefined') dataList = res.data;
+            }
+            // 執行渲染畫面
+            if (typeof renderSystem === 'function') renderSystem();
+        };
+
         function initializeSystemFromCloud() {
             if (!GAS_WEB_APP_URL) {
                 if (typeof renderSystem === 'function') renderSystem();
                 return;
             }
 
-            // 比照健康同步、智慧任務最純粹的 GET 讀取方式
-            fetch(`${GAS_WEB_APP_URL}?_=${new Date().getTime()}`)
-                .then(response => response.json())
-                .then(cloudArray => {
-                    // 核心：成功範本直接回傳資料陣列，所以我們直接檢查 cloudArray.length
-                    if (Array.isArray(cloudArray) && cloudArray.length > 0) {
-                        console.log("📬 成功下載雲端歷史資料，筆數：", cloudArray.length);
-                        
-                        // 1. 儲存進妳 Application 看見的 myLinks 快取箱
-                        localStorage.setItem('myLinks', JSON.stringify(cloudArray));
-                        
-                        // 2. 灌回網頁中所有可能的全局變數中，確保萬無一失
-                        if (typeof myLinks !== 'undefined') myLinks = cloudArray;
-                        if (typeof bookmarks !== 'undefined') bookmarks = cloudArray;
-                        if (typeof items !== 'undefined') items = cloudArray;
-                        if (typeof dataList !== 'undefined') dataList = cloudArray;
-                    }
-                    
-                    // 執行渲染畫面
-                    if (typeof renderSystem === 'function') renderSystem();
-                })
-                .catch(err => {
-                    console.warn("讀取雲端受限，採用本地快取安全載入：", err);
-                    if (typeof renderSystem === 'function') renderSystem();
-                });
+            // 使用無敵的 JSONP 讀取方式，百分之百穿透 CORS 限制
+            const script = document.createElement('script');
+            script.src = `${GAS_WEB_APP_URL}?callback=handleCloudData&_=${new Date().getTime()}`;
+            script.onerror = function() {
+                console.warn("雲端讀取失敗，降級使用本地快取載入。");
+                if (typeof renderSystem === 'function') renderSystem();
+            };
+            document.body.appendChild(script);
         }
 
         // 正式啟動：用雲端優先的方式初始化系統
