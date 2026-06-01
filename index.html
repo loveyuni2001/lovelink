@@ -432,24 +432,70 @@
     <script>
         // ⚠️【請將下方的網址換成妳在 Apps Script 部署得到的 Web App 網址】⚠️
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWgfzw6d_Kk5osOblW1_azjz4sDelYnTj6ilTu9y1sxi6kVF_2MVOby9h7ndJQ47K80Q/exec"; // 請換成妳的網址
+let collections = [];
+    let categories = ['美食拉', '住宿', '小說/註解', '老公的', '媽媽的'];
+    let currentFilter = '全部';
 
-        let categories = ['美食拉', '住宿', '小說/註解', '老公的', '媽媽的'];
-        let collections = []; 
+    // 1. 頁面載入時讀取
+    window.addEventListener("DOMContentLoaded", () => {
+        fetch(GAS_WEB_APP_URL)
+            .then(res => res.json())
+            .then(res => {
+                collections = res.data || [];
+                initUI();
+                showSyncStatus("資料已讀取", true);
+            });
+    });
+
+    // 2. 新增項目 (只存本地)
+    function saveItem(event) {
+        event.preventDefault();
+        const newItem = {
+            id: "ID_" + Date.now(),
+            name: document.getElementById('item-name').value,
+            url: document.getElementById('item-url').value,
+            imageUrl: document.getElementById('upload-preview').src,
+            category: document.getElementById('item-category').value,
+            notes: document.getElementById('item-comment').value
+        };
+        collections.unshift(newItem);
+        initUI();
+        showSyncStatus("已新增至本地，請記得點擊同步按鈕");
+    }
+
+    // 3. 一鍵同步至雲端
+    function syncAllToCloud() {
+        showSyncStatus("正在同步至 Google 試算表...");
+        fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "syncAll", items: collections })
+        })
+        .then(() => showSyncStatus("雲端已同步成功！", true))
+        .catch(() => showSyncStatus("同步失敗，請檢查網路"));
+    }
+
+    function renderCards() {
+        const container = document.getElementById('items-grid-container');
+        const data = currentFilter === '全部' ? collections : collections.filter(i => i.category === currentFilter);
         
-        let currentFilter = '全部';
-        let editTargetId = null;
-        let currentUploadedImgBase64 = '';
+        container.innerHTML = data.map(item => `
+            <div class="item-card">
+                ${item.imageUrl && item.imageUrl.startsWith('http') ? `<img src="${item.imageUrl}" class="card-img">` : 
+                  `<div class="card-img" style="display:flex; align-items:center; justify-content:center; background:#eee;">無預覽圖</div>`}
+                <div class="card-body">
+                    <div class="card-title">${item.name}</div>
+                    <div class="card-comment-box">${item.notes}</div>
+                </div>
+                <div class="card-footer-actions">
+                    <a href="${item.url}" target="_blank" class="card-action-btn">連結</a>
+                </div>
+            </div>
+        `).join('');
+    }
 
-        window.addEventListener("DOMContentLoaded", fetchFromCloud);
-
-        function showSyncStatus(msg, isDone = false) {
-            const statusBox = document.getElementById('sync-status-text');
-            if (isDone) {
-                statusBox.innerHTML = `<i class="fa-solid fa-cloud-check" style="color: green;"></i> ${msg}`;
-            } else {
-                statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color: orange;"></i> ${msg}`;
-            }
-        }
+    function initUI() { renderCards(); }
+    function showSyncStatus(msg, isDone) { document.getElementById('sync-status-text').innerText = msg; }
+</script>
 
         // 讀取雲端資料
         function fetchFromCloud() {
