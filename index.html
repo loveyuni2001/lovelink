@@ -808,8 +808,9 @@ fetch(GAS_WEB_APP_URL, {
   headers: {
     "Content-Type": "text/plain" // 避免觸發預檢請求 (Preflight)
   },
-  body: JSON.stringify({ items: items }) // items 改成妳程式碼中實際儲存資料陣列的變數名
-})
+// 請確保妳儲存按鈕發送時的 body 是長這樣：
+body: JSON.stringify({ items: myLinks }) // 把後面的 items 改成 myLinks 傳給雲端
+    })
 .then(() => {
   // 只要走到這裡，就代表請求成功發出了！
   btn.classList.remove('unsaved');
@@ -826,13 +827,12 @@ fetch(GAS_WEB_APP_URL, {
         });
 // === 7. 雲端初始化同步模組 ===
         function initializeSystemFromCloud() {
-            // 如果連網址都沒填，就直接用本地原本的資料渲染
             if (!GAS_WEB_APP_URL) {
                 renderSystem();
                 return;
             }
 
-            // 網頁一打開，先溫柔地去跟 Google Sheet 說：給我最新的資料
+            // 網頁一打開，先去跟 Google Sheet 拿最新資料
             fetch(GAS_WEB_APP_URL)
                 .then(response => {
                     if (!response.ok) throw new Error("網路回應不成功");
@@ -842,19 +842,18 @@ fetch(GAS_WEB_APP_URL, {
                     if (res.status === "success" && res.data && res.data.length > 0) {
                         console.log("成功從雲端下載最新資料！", res.data);
                         
-                        // 關鍵：將雲端撈到的試算表資料，同步覆蓋回妳網頁的變數中
-                        // (請確認妳網頁存資料的陣列變數是叫 items，如果叫 bookmarks 或別的請將 items 改掉)
-                        items = res.data;
+                        // 正名：將雲端撈到的試算表資料，同步覆蓋回妳網頁的變數 myLinks
+                        myLinks = res.data;
                         
-                        // 同時備份一份在本地快取
-                        localStorage.setItem('bookmarks', JSON.stringify(items)); 
+                        // 正名：衕步存入妳專屬的本地快取箱子 'myLinks'
+                        localStorage.setItem('myLinks', JSON.stringify(myLinks)); 
                     }
-                    // 不管雲端有沒有抓到新東西，最後都執行渲染把卡片畫出來
+                    // 執行渲染把卡片畫出來
                     renderSystem();
                 })
                 .catch(err => {
                     console.error("讀取雲端失敗或超時，自動降級改用本地快取載入:", err);
-                    // 萬一沒網卡或 Google 沒回應，依然要讓網頁看得到東西
+                    // 萬一 Google 沒回應，依然用本地原本的 myLinks 渲染畫面
                     renderSystem();
                 });
         }
