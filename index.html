@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>收藏管理系統</title>
+    <title>收藏管理系統 - 欄位對調與雲端串接版</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -744,32 +744,15 @@
 
     </div>
 
- <div class="mid-col">
+
+
+    <div class="wrapper">
+
+        
+
+        <div class="left-col">
 
             <div class="panel-box">
-
-                <div class="panel-title">管理導覽</div>
-
-                <ul class="category-list" id="category-ul">
-
-                    </ul>
-
-                <div class="add-category-inline">
-
-                    <input type="text" id="new-cat-input" placeholder="加新分類...">
-
-                    <button onclick="addNewCategory()"><i class="fa-solid fa-plus"></i></button>
-
-                     <div class="left-col">
-
-            
-                
-
-            </div>
-       
-
-        </div>
-<div class="panel-box">
 
                 <div class="panel-title" id="form-panel-title">新增項目</div>
 
@@ -783,11 +766,7 @@
 
                     </div>
 
-                  
-                 <div class="wrapper">
-
-        
-  <div class="form-group">
+                    <div class="form-group">
 
                         <label>連結網址 (可留白)</label>
 
@@ -837,16 +816,33 @@
 
                 </form>
 
-                </div>
             </div>
 
         </div>
 
-   
 
 
+        <div class="mid-col">
 
-       
+            <div class="panel-box">
+
+                <div class="panel-title">管理導覽</div>
+
+                <ul class="category-list" id="category-ul">
+
+                    </ul>
+
+                <div class="add-category-inline">
+
+                    <input type="text" id="new-cat-input" placeholder="加新分類...">
+
+                    <button onclick="addNewCategory()"><i class="fa-solid fa-plus"></i></button>
+
+                </div>
+
+            </div>
+
+        </div>
 
 
 
@@ -1160,10 +1156,11 @@
 
     // ... (其他原有的 startEdit, cancelEdit, deleteCard, renderCards 等函式請保留在下方) ...
 
-    // 請確認這些函式都在這個 </script> 
+    // 請確認這些函式都在這個 </script> 標籤內
 
 </script>
 
 </body>
 
-</html>
+</html> 
+
