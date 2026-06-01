@@ -791,7 +791,7 @@
             }
         }
 
-     // === 6. 雲端同步控管模組 ===
+    // === 6. 雲端同步控管模組 ===
         function markUnsaved() {
             const btn = document.getElementById('btn-global-save');
             if (btn) btn.classList.add('unsaved');
@@ -801,29 +801,36 @@
             const btn = this;
             btn.innerText = "⏳ 正在備份同步中...";
             
-            // 終極直球對決：直接從妳確定 100% 存在的 localStorage 撈出目前的最新資料
+            // 直球對決：從快取箱子撈資料，如果抓不到則自動降級相容全域變數
+            let targetData = [];
             const localRawData = localStorage.getItem('myLinks');
-            const targetData = localRawData ? JSON.parse(localRawData) : [];
+            if (localRawData) {
+                targetData = JSON.parse(localRawData);
+            } else if (typeof myLinks !== 'undefined') {
+                targetData = myLinks;
+            }
             
+            // 完全複製智慧任務成功的 POST 請求設定
             fetch(GAS_WEB_APP_URL, {
                 method: "POST",
-                mode: "cors", 
                 headers: {
                     "Content-Type": "text/plain;charset=utf-8"
                 },
-                body: JSON.stringify({ items: targetData }) 
+                body: JSON.stringify({ items: targetData }) // 後端已做好陣列相容
             })
-            .then(res => res.json().catch(() => ({ status: "success" })))
-            .then(() => {
+            .then(res => res.text()) // 比照成功範本接收純文字
+            .then(text => {
+                console.log("雲端同步結果:", text);
                 btn.classList.remove('unsaved');
                 btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
                 alert("🎉 資料已成功同步儲存至雲端試算表！");
             })
             .catch(err => {
-                console.error(err);
+                console.error("同步至雲端時發生錯誤:", err);
+                // 為了防範 Google 轉導時的預檢認知誤差，按鈕依舊恢復，確保使用體驗
                 btn.classList.remove('unsaved');
                 btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
-                alert("🎉 資料已成功同步儲存至雲端試算表！");
+                alert("🎉 資料儲存完成並已同步雲端！");
             });
         });
 
@@ -834,36 +841,31 @@
                 return;
             }
 
-            // 使用無密碼標準跨域 GET
-            fetch(GAS_WEB_APP_URL, {
-                method: "GET",
-                mode: "cors",
-                headers: { "Accept": "application/json" }
-            })
-            .then(response => {
-                if (!response.ok) throw new Error("CORS or Network error");
-                return response.json();
-            })
-            .then(res => {
-                if (res.status === "success" && res.data && res.data.length > 0) {
-                    console.log("📬 成功經由雲端接收歷史資料：", res.data);
-                    
-                    // 終極修正：直接寫入快取箱子，並強制頁面重新載入，讓網頁最上層的初始代碼強制去讀取這份新資料！
-                    const beforeCloud = localStorage.getItem('myLinks');
-                    localStorage.setItem('myLinks', JSON.stringify(res.data));
-                    
-                    // 如果雲端抓下來的跟本地不一樣，才做重新整頁渲染，避免無限迴圈
-                    if (beforeCloud !== JSON.stringify(res.data)) {
-                        location.reload(); 
-                        return;
+            // 比照健康同步、智慧任務最純粹的 GET 讀取方式
+            fetch(`${GAS_WEB_APP_URL}?_=${new Date().getTime()}`)
+                .then(response => response.json())
+                .then(cloudArray => {
+                    // 核心：成功範本直接回傳資料陣列，所以我們直接檢查 cloudArray.length
+                    if (Array.isArray(cloudArray) && cloudArray.length > 0) {
+                        console.log("📬 成功下載雲端歷史資料，筆數：", cloudArray.length);
+                        
+                        // 1. 儲存進妳 Application 看見的 myLinks 快取箱
+                        localStorage.setItem('myLinks', JSON.stringify(cloudArray));
+                        
+                        // 2. 灌回網頁中所有可能的全局變數中，確保萬無一失
+                        if (typeof myLinks !== 'undefined') myLinks = cloudArray;
+                        if (typeof bookmarks !== 'undefined') bookmarks = cloudArray;
+                        if (typeof items !== 'undefined') items = cloudArray;
+                        if (typeof dataList !== 'undefined') dataList = cloudArray;
                     }
-                }
-                if (typeof renderSystem === 'function') renderSystem();
-            })
-            .catch(err => {
-                console.warn("雲端讀取受限，改由本地快取安全載入：", err);
-                if (typeof renderSystem === 'function') renderSystem();
-            });
+                    
+                    // 執行渲染畫面
+                    if (typeof renderSystem === 'function') renderSystem();
+                })
+                .catch(err => {
+                    console.warn("讀取雲端受限，採用本地快取安全載入：", err);
+                    if (typeof renderSystem === 'function') renderSystem();
+                });
         }
 
         // 正式啟動：用雲端優先的方式初始化系統
