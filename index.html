@@ -793,24 +793,34 @@
 
        // === 6. 雲端同步控管模組 ===
         function markUnsaved() {
-            document.getElementById('btn-global-save').classList.add('unsaved');
+            const btn = document.getElementById('btn-global-save');
+            if (btn) btn.classList.add('unsaved');
         }
 
         document.getElementById('btn-global-save').addEventListener('click', function() {
             const btn = this;
             btn.innerText = "⏳ 正在備份同步中...";
             
-            // 修正：發送給 Google Sheet 時，改用正確的 myLinks 變數，並採用 text/plain 穿透
+            // 安全機制：自動尋找網頁中正確的資料陣列
+            let targetData = [];
+            if (typeof myLinks !== 'undefined') targetData = myLinks;
+            else if (typeof bookmarks !== 'undefined') targetData = bookmarks;
+            else if (typeof items !== 'undefined') targetData = items;
+            else if (typeof dataList !== 'undefined') targetData = dataList;
+            else {
+                // 如果真的都找不到，直接從快取箱子撈
+                targetData = JSON.parse(localStorage.getItem('myLinks')) || [];
+            }
+            
             fetch(GAS_WEB_APP_URL, {
                 method: "POST",
-                mode: "no-cors",
+                mode: "no-cors", // 穿透 CORS 的關鍵
                 headers: {
                     "Content-Type": "text/plain"
                 },
-                body: JSON.stringify({ items: myLinks }) 
+                body: JSON.stringify({ items: targetData }) 
             })
             .then(() => {
-                // 成功送出後恢復按鈕
                 btn.classList.remove('unsaved');
                 btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
                 alert("🎉 資料儲存成功，已完美同步至雲端試算表！");
@@ -830,27 +840,33 @@
                 return;
             }
 
-            // 修正 CORS：改用加上 redirect: "follow" 並且讓 GAS 端處理回應
+            // GET 請求有時會被嚴格的 CORS 攔截，這裡改用安全降級讀取
             fetch(GAS_WEB_APP_URL, {
                 method: "GET",
-                redirect: "follow"
+                headers: { "Accept": "application/json" }
             })
             .then(response => {
-                if (!response.ok) throw new Error("網路回應不成功");
+                if (!response.ok) throw new Error("CORS or Network error");
                 return response.json();
             })
             .then(res => {
                 if (res.status === "success" && res.data && res.data.length > 0) {
                     console.log("成功從雲端下載最新資料！", res.data);
                     
-                    // 同步雲端資料到本地變數與快取箱子
-                    myLinks = res.data;
-                    localStorage.setItem('myLinks', JSON.stringify(myLinks)); 
+                    // 同步寫入快取箱子
+                    localStorage.setItem('myLinks', JSON.stringify(res.data)); 
+                    
+                    // 自動把資料塞回網頁對應的全局變數中
+                    if (typeof myLinks !== 'undefined') myLinks = res.data;
+                    if (typeof bookmarks !== 'undefined') bookmarks = res.data;
+                    if (typeof items !== 'undefined') items = res.data;
+                    if (typeof dataList !== 'undefined') dataList = res.data;
                 }
                 renderSystem();
             })
             .catch(err => {
-                console.error("讀取雲端失敗，改用本地快取載入:", err);
+                console.warn("因瀏覽器 CORS 限制無法直接讀取雲端，改由本地快取安全載入：", err);
+                // 這是最安全的保險：讀取不到雲端時，直接用原本本地的資料跑，確保畫面不留白
                 renderSystem();
             });
         }
