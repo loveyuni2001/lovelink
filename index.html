@@ -429,149 +429,88 @@
 
     </div>
 
-    <script>
-        // ⚠️【請將下方的網址換成妳在 Apps Script 部署得到的 Web App 網址】⚠️
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWgfzw6d_Kk5osOblW1_azjz4sDelYnTj6ilTu9y1sxi6kVF_2MVOby9h7ndJQ47K80Q/exec"; // 請換成妳的網址
-let collections = [];
+   <script>
+    // ⚠️【請確認網址正確】
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWgfzw6d_Kk5osOblW1_azjz4sDelYnTj6ilTu9y1sxi6kVF_2MVOby9h7ndJQ47K80Q/exec";
+    let collections = [];
     let categories = ['美食拉', '住宿', '小說/註解', '老公的', '媽媽的'];
     let currentFilter = '全部';
+    let editTargetId = null;
+    let currentUploadedImgBase64 = '';
 
     // 1. 頁面載入時讀取
     window.addEventListener("DOMContentLoaded", () => {
-        fetch(GAS_WEB_APP_URL)
-            .then(res => res.json())
-            .then(res => {
-                collections = res.data || [];
-                initUI();
-                showSyncStatus("資料已讀取", true);
-            });
+        fetchFromCloud();
     });
 
-    // 2. 新增項目 (只存本地)
-    function saveItem(event) {
-        event.preventDefault();
-        const newItem = {
-            id: "ID_" + Date.now(),
-            name: document.getElementById('item-name').value,
-            url: document.getElementById('item-url').value,
-            imageUrl: document.getElementById('upload-preview').src,
-            category: document.getElementById('item-category').value,
-            notes: document.getElementById('item-comment').value
-        };
-        collections.unshift(newItem);
-        initUI();
-        showSyncStatus("已新增至本地，請記得點擊同步按鈕");
-    }
+    // 2. 讀取雲端資料 (將原本在 script 外面的函式移進來)
+    function fetchFromCloud() {
+        showSyncStatus("雲端資料同步中...");
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("這裡請換成")) {
+            showSyncStatus("尚未設定後端網址", true);
+            initUI();
+            return;
+        }
 
-    // 3. 一鍵同步至雲端
-    function syncAllToCloud() {
-        showSyncStatus("正在同步至 Google 試算表...");
-        fetch(GAS_WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: "syncAll", items: collections })
-        })
-        .then(() => showSyncStatus("雲端已同步成功！", true))
-        .catch(() => showSyncStatus("同步失敗，請檢查網路"));
-    }
-
-    function renderCards() {
-        const container = document.getElementById('items-grid-container');
-        const data = currentFilter === '全部' ? collections : collections.filter(i => i.category === currentFilter);
-        
-        container.innerHTML = data.map(item => `
-            <div class="item-card">
-                ${item.imageUrl && item.imageUrl.startsWith('http') ? `<img src="${item.imageUrl}" class="card-img">` : 
-                  `<div class="card-img" style="display:flex; align-items:center; justify-content:center; background:#eee;">無預覽圖</div>`}
-                <div class="card-body">
-                    <div class="card-title">${item.name}</div>
-                    <div class="card-comment-box">${item.notes}</div>
-                </div>
-                <div class="card-footer-actions">
-                    <a href="${item.url}" target="_blank" class="card-action-btn">連結</a>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function initUI() { renderCards(); }
-    function showSyncStatus(msg, isDone) { document.getElementById('sync-status-text').innerText = msg; }
-</script>
-
-        // 讀取雲端資料
-        function fetchFromCloud() {
-            showSyncStatus("雲端資料同步中...");
-            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("這裡請換成")) {
-                showSyncStatus("尚未設定後端網址", true);
-                initUI();
-                return;
-            }
-
-            fetch(GAS_WEB_APP_URL)
-                .then(res => res.json())
-                .then(result => {
-                    if (result.status === "success" && result.data) {
-                        collections = result.data.map(row => ({
-                            id: row.id,
-                            name: row.name,
-                            url: row.url,
-                            img: row.imageUrl,
-                            category: row.category,
-                            comment: row.notes || '暫無備註說明'
-                        }));
-                        
-                        collections.forEach(item => {
-                            if (item.category && !categories.includes(item.category)) {
-                                categories.push(item.category);
-                            }
-                        });
-
-                        showSyncStatus("已即時讀取最新雲端資料", true);
-                        initUI();
-                    } else {
-                        showSyncStatus("讀取失敗", true);
-                        initUI();
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    showSyncStatus("連線中斷，切換至本地暫存模式", true);
+        fetch(GAS_WEB_APP_URL)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "success" && result.data) {
+                    collections = result.data.map(row => ({
+                        id: row.id,
+                        name: row.name,
+                        url: row.url,
+                        img: row.imageUrl,
+                        category: row.category,
+                        comment: row.notes || '暫無備註說明'
+                    }));
+                    
+                    collections.forEach(item => {
+                        if (item.category && !categories.includes(item.category)) {
+                            categories.push(item.category);
+                        }
+                    });
+                    showSyncStatus("已即時讀取最新雲端資料", true);
                     initUI();
-                });
-        }
+                } else {
+                    showSyncStatus("讀取失敗", true);
+                    initUI();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showSyncStatus("連線中斷，切換至本地暫存模式", true);
+                initUI();
+            });
+    }
 
-        function initUI() {
-            renderCategories();
-            renderFilterTags();
-            renderCards();
-        }
+    // --- 以下為您原本所有的核心功能函式 ---
+    function initUI() {
+        renderCategories();
+        renderFilterTags();
+        renderCards();
+    }
 
-        function renderCategories() {
-            const container = document.getElementById('category-ul');
-            const allActive = currentFilter === '全部' ? 'active' : '';
-            
-            let html = `
-                <li class="category-item ${allActive}" onclick="setFilter('全部')">
-                    <div class="category-left-part">
-                        <i class="fa-solid fa-earth-asia"></i>
-                        <span>全部項目</span>
-                    </div>
-                    <div class="category-right-part">
-                        <span class="category-count">${collections.length}</span>
-                    </div>
-                </li>
-            `;
+    function showSyncStatus(msg, isDone) { 
+        const el = document.getElementById('sync-status-text');
+        if(el) el.innerText = msg; 
+    }
 
-            categories.forEach(cat => {
-                const count = collections.filter(item => item.category === cat).length;
-                const isActive = currentFilter === cat ? 'active' : '';
-                const icon = cat === '美食拉' ? 'fa-utensils' : (cat === '住宿' ? 'fa-bed' : (cat === '小說/註解' ? 'fa-book' : 'fa-folder'));
-                
-                html += `
-                    <li class="category-item ${isActive}" onclick="setFilter('${cat}')">
-                        <div class="category-left-part">
-                            <i class="fa-solid ${icon}"></i>
-                            <span>${cat}</span>
-                        </div>
+    function renderCategories() {
+        const container = document.getElementById('category-ul');
+        if(!container) return;
+        const allActive = currentFilter === '全部' ? 'active' : '';
+        let html = `<li class="category-item ${allActive}" onclick="setFilter('全部')">
+                        <div class="category-left-part"><i class="fa-solid fa-earth-asia"></i> <span>全部項目</span></div>
+                        <div class="category-right-part"><span class="category-count">${collections.length}</span></div>
+                    </li>`;
+
+        categories.forEach(cat => {
+            const count = collections.filter(item => item.category === cat).length;
+            const isActive = currentFilter === cat ? 'active' : '';
+            const icon = cat === '美食拉' ? 'fa-utensils' : (cat === '住宿' ? 'fa-bed' : (cat === '小說/註解' ? 'fa-book' : 'fa-folder'));
+            html += `<li class="category-item ${isActive}" onclick="setFilter('${cat}')">
+                        <div class="category-left-part"><i class="fa-solid ${icon}"></i> <span>${cat}</span></div>
                         <div class="category-right-part">
                             <div class="category-actions-tools">
                                 <i class="fa-solid fa-pen" onclick="event.stopPropagation(); renameCategory('${cat}')"></i>
@@ -579,229 +518,66 @@ let collections = [];
                             </div>
                             <span class="category-count">${count}</span>
                         </div>
-                    </li>
-                `;
-            });
-            container.innerHTML = html;
+                    </li>`;
+        });
+        container.innerHTML = html;
+        const select = document.getElementById('item-category');
+        if(select) select.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+    }
 
-            const select = document.getElementById('item-category');
-            select.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-        }
+    function renderFilterTags() {
+        const container = document.getElementById('filter-tags-container');
+        if(!container) return;
+        const tags = ['全部', ...categories];
+        container.innerHTML = tags.map(tag => {
+            const isActive = currentFilter === tag ? 'active' : '';
+            return `<div class="filter-tag ${isActive}" onclick="setFilter('${tag}')">${tag}</div>`;
+        }).join('');
+    }
 
-        function renderFilterTags() {
-            const container = document.getElementById('filter-tags-container');
-            const tags = ['全部', ...categories];
-            container.innerHTML = tags.map(tag => {
-                const isActive = currentFilter === tag ? 'active' : '';
-                return `<div class="filter-tag ${isActive}" onclick="setFilter('${tag}')">${tag}</div>`;
-            }).join('');
-        }
+    function setFilter(cat) {
+        currentFilter = cat;
+        initUI();
+    }
 
-        function setFilter(cat) {
-            currentFilter = cat;
-            renderCategories();
-            renderFilterTags();
-            renderCards();
-        }
+    function saveItem(event) {
+        event.preventDefault();
+        showSyncStatus("正在傳送至雲端試算表...");
+        const name = document.getElementById('item-name').value.trim();
+        const url = document.getElementById('item-url').value.trim();
+        const category = document.getElementById('item-category').value;
+        const comment = document.getElementById('item-comment').value.trim();
 
-        function addNewCategory() {
-            const input = document.getElementById('new-cat-input');
-            const name = input.value.trim();
-            if (!name) return;
-            if (categories.includes(name)) { alert('名稱重複囉！'); return; }
-            categories.push(name);
-            input.value = '';
-            renderCategories();
-            renderFilterTags();
-        }
-
-        function renameCategory(oldName) {
-            const newName = prompt(`請輸入「${oldName}」的新名稱：`, oldName);
-            if (!newName || newName.trim() === '' || newName === oldName) return;
-            const trimmed = newName.trim();
-            categories = categories.map(c => c === oldName ? trimmed : c);
-            
-            collections.forEach(item => { 
-                if (item.category === oldName) {
-                    item.category = trimmed;
-                    pushItemToCloud(item);
-                }
-            });
-            if (currentFilter === oldName) currentFilter = trimmed;
-            renderCategories();
-            renderFilterTags();
-            renderCards();
-        }
-
-        function deleteCategory(catName) {
-            if (!confirm(`確定要刪除「${catName}」分類嗎？`)) return;
-            categories = categories.filter(c => c !== catName);
-            collections = collections.filter(item => item.category !== catName);
-            if (currentFilter === catName) currentFilter = '全部';
-            renderCategories();
-            renderFilterTags();
-            renderCards();
-        }
-
-        function previewFile() {
-            const file = document.getElementById('hidden-file-input').files[0];
-            const statusText = document.getElementById('upload-status-text');
-            const previewImg = document.getElementById('upload-preview');
-            if (file) {
-                statusText.innerText = `已選：${file.name}`;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    previewImg.style.display = 'block';
-                    currentUploadedImgBase64 = e.target.result;
-                }
-                reader.readAsDataURL(file);
+        let targetItem;
+        if (editTargetId === null) {
+            targetItem = { id: "ID_" + Date.now(), name, url, img: currentUploadedImgBase64, category, comment: comment || '暫無備註說明' };
+            collections.unshift(targetItem);
+        } else {
+            targetItem = collections.find(item => item.id === editTargetId);
+            if (targetItem) {
+                targetItem.name = name; targetItem.url = url; targetItem.category = category;
+                targetItem.comment = comment || '暫無備註說明';
+                if (currentUploadedImgBase64) targetItem.img = currentUploadedImgBase64;
             }
         }
+        initUI(); 
+        pushItemToCloud(targetItem);
+        cancelEdit();
+    }
 
-        // 核心修改：新增後前端立刻刷新卡片，不乾等雲端下載
-        function saveItem(event) {
-            event.preventDefault();
-            showSyncStatus("正在傳送至雲端試算表...");
+    function pushItemToCloud(item) {
+        // 請確保您的 Apps Script doPost 有正確處理 CORS
+        fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: collections })
+        })
+        .then(() => showSyncStatus("已同步備份至 Google 試算表！", true))
+        .catch(err => { console.error(err); showSyncStatus("雲端備份失敗", true); });
+    }
 
-            const name = document.getElementById('item-name').value.trim();
-            const url = document.getElementById('item-url').value.trim();
-            const category = document.getElementById('item-category').value;
-            const comment = document.getElementById('item-comment').value.trim();
-
-            let targetItem = null;
-
-            if (editTargetId === null) {
-                // 新增模式
-                targetItem = {
-                    id: "ID_" + Date.now(),
-                    name: name,
-                    url: url,
-                    img: currentUploadedImgBase64,
-                    category: category,
-                    comment: comment || '暫無備註說明'
-                };
-                collections.unshift(targetItem); // 1. 直接推入前端陣列
-            } else {
-                // 修改模式
-                targetItem = collections.find(item => item.id === editTargetId);
-                if (targetItem) {
-                    targetItem.name = name;
-                    targetItem.url = url;
-                    targetItem.category = category;
-                    targetItem.comment = comment || '暫無備註說明';
-                    if (currentUploadedImgBase64) targetItem.img = currentUploadedImgBase64;
-                }
-            }
-
-            // 2. 讓右側畫面「不需要等雲端」，立刻一秒刷新跳出新卡片！
-            initUI(); 
-            
-            // 3. 偷偷把資料拋接給雲端去存檔
-            pushItemToCloud(targetItem);
-            cancelEdit();
-        }
-
-        function pushItemToCloud(item) {
-            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("這裡請換成")) {
-                showSyncStatus("本地已新增 (未設定雲端網址)", true);
-                return;
-            }
-
-            const postPayload = {
-                id: item.id,
-                name: item.name,
-                url: item.url,
-                imageUrl: item.img,
-                category: item.category,
-                notes: item.comment
-            };
-
-            fetch(GAS_WEB_APP_URL, {
-                method: "POST",
-                mode: "no-cors", 
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(postPayload)
-            })
-            .then(() => {
-                showSyncStatus("已同步備份至 Google 試算表！", true);
-            })
-            .catch(err => {
-                console.error(err);
-                showSyncStatus("雲端備份失敗，但已存在本機畫面", true);
-            });
-        }
-
-        function startEdit(id) {
-            const item = collections.find(i => i.id === id);
-            if (!item) return;
-            editTargetId = id;
-            document.getElementById('form-panel-title').innerText = "編輯項目 ⚙️";
-            document.getElementById('item-name').value = item.name;
-            document.getElementById('item-url').value = item.url;
-            document.getElementById('item-category').value = item.category;
-            document.getElementById('item-comment').value = item.comment === '暫無備註說明' ? '' : item.comment;
-            
-            const previewImg = document.getElementById('upload-preview');
-            if (item.img) {
-                previewImg.src = item.img;
-                previewImg.style.display = 'block';
-            } else {
-                previewImg.style.display = 'none';
-            }
-            document.getElementById('btn-submit-form').innerText = "確認修改並同步";
-            document.getElementById('btn-cancel-edit').style.display = 'block';
-        }
-
-        function cancelEdit() {
-            editTargetId = null;
-            document.getElementById('item-form').reset();
-            document.getElementById('form-panel-title').innerText = "新增項目";
-            document.getElementById('upload-preview').style.display = 'none';
-            document.getElementById('upload-status-text').innerText = "點擊選取圖片檔案";
-            document.getElementById('btn-submit-form').innerText = "確認新增並同步雲端";
-            document.getElementById('btn-cancel-edit').style.display = 'none';
-            currentUploadedImgBase64 = '';
-        }
-
-        function deleteCard(id) {
-            if (!confirm('確定要刪除嗎？（提醒：請記得手動清除 Google 試算表上的該行資料喔！）')) return;
-            collections = collections.filter(item => item.id !== id);
-            if(editTargetId === id) cancelEdit();
-            initUI();
-        }
-
-        function renderCards() {
-            const container = document.getElementById('items-grid-container');
-            const data = currentFilter === '全部' ? collections : collections.filter(i => i.category === currentFilter);
-
-            if (data.length === 0) {
-                container.innerHTML = `<div style="width:100%; text-align:center; padding:40px; color:#666;">目前沒有項目，快從左側表單新增吧！</div>`;
-                return;
-            }
-
-            container.innerHTML = data.map(item => {
-                const img = item.img ? `<img src="${item.img}" class="card-img">` : '';
-                const linkBtn = item.url ? `<a href="${item.url}" target="_blank" class="card-action-btn"><i class="fa-solid fa-link"></i> 連結</a>` : `<span class="card-action-btn" style="opacity:0.3;"><i class="fa-solid fa-link-slash"></i> 無</span>`;
-                return `
-                    <div class="item-card">
-                        ${img}
-                        <div class="card-body">
-                            <div class="card-title">${item.name}</div>
-                            <div class="card-category">${item.category}</div>
-                            <div class="card-comment-box">${item.comment}</div>
-                        </div>
-                        <div class="card-footer-actions">
-                            ${linkBtn}
-                            <button class="card-action-btn" onclick="startEdit('${item.id}')">修改</button>
-                            <button class="card-action-btn delete-btn" onclick="deleteCard('${item.id}')">刪除</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-    </script>
+    // ... (其他原有的 startEdit, cancelEdit, deleteCard, renderCards 等函式請保留在下方) ...
+    // 請確認這些函式都在這個 </script> 標籤內
+</script>
 </body>
 </html>
