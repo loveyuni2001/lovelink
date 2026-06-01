@@ -607,66 +607,103 @@
 
     <!-- 簡易互動邏輯 JavaScript 說明 -->
     <script>
-        // 點擊上傳區域觸發隱藏的 file input
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('hidden-file-input');
-        const statusText = document.getElementById('upload-status-text');
-        const previewImg = document.getElementById('upload-preview');
+      // --- 圖片上傳預覽與觸發邏輯 ---
+    // 點擊上傳區域觸發隱藏的 file input
+    const fileInput = document.getElementById('hidden-file-input');
+    const statusText = document.getElementById('upload-status-text');
+    const previewImg = document.getElementById('upload-preview');
 
-        dropZone.addEventListener('click', () => fileInput.click());
+    // 如果畫面上有 drop-zone 則綁定點擊事件
+    if (document.getElementById('drop-zone')) {
+        document.getElementById('drop-zone').addEventListener('click', () => fileInput.click());
+    }
 
-        fileInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                statusText.innerText = "已成功選擇圖片：" + this.files[0].name + " (已同步上傳至雲端設定空間)";
-                
-                // 顯示預覽圖
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    previewImg.style.display = 'block';
-                }
-                reader.readAsDataURL(this.files[0]);
-                
-                // 標記系統有未儲存的變更
-                document.getElementById('btn-global-save').classList.add('unsaved');
+    function previewFile() {
+        const file = fileInput.files[0];
+        if (file) {
+            statusText.innerText = "已成功選擇圖片：" + file.name;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+                currentUploadedImgBase64 = e.target.result; // 將圖片轉為 Base64 存入全域變數
             }
-        });
+            reader.readAsDataURL(file);
+        }
+    }
 
-        // 模擬點擊「編輯修改」卡片時，將資料帶回中央表單進行修改
-        const editButtons = document.querySelectorAll('.edit-item-btn');
-        editButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const card = this.closest('.item-card');
-                const title = card.querySelector('.card-title').innerText;
-                const comment = card.querySelector('.card-comment-box').innerText.replace('暫無備註說明', '').trim();
-                
-                // 切換表單狀態為編輯模式
-                document.getElementById('form-panel-title').innerText = "編輯項目 ⚙️";
-                document.getElementById('item-name').value = title;
-                document.getElementById('item-comment').value = comment;
-                document.getElementById('btn-submit-form').innerText = "確認修改儲存";
-                document.getElementById('btn-cancel-edit').style.display = 'block';
-                
-                // 滾動至表單位置
-                document.getElementById('item-form').scrollIntoView({ behavior: 'smooth' });
-            });
-        });
+    // --- 核心動作：編輯、取消、儲存邏輯 ---
 
-        // 取消編輯按鈕
-        document.getElementById('btn-cancel-edit').addEventListener('click', function() {
-            document.getElementById('form-panel-title').innerText = "新增項目";
-            document.getElementById('item-form').reset();
+    // 1. 點擊卡片上的「編輯修改」
+    function startEdit(id) {
+        // 從目前的資料陣列中找出這張卡片
+        const item = collections.find(i => i.id === id);
+        if (!item) return;
+
+        editTargetId = id; // 標記目前正在編輯哪一筆資料
+
+        // 換標題與按鈕文字
+        document.getElementById('form-panel-title').innerText = "編輯項目 ⚙️";
+        document.getElementById('btn-submit-form').innerText = "確認修改儲存";
+        document.getElementById('btn-cancel-edit').style.display = 'block';
+
+        // 將這張卡片的舊資料塞回中間的表單
+        document.getElementById('item-name').value = item.name;
+        document.getElementById('item-url').value = item.url || '';
+        document.getElementById('item-category').value = item.category;
+        document.getElementById('item-comment').value = item.comment === '暫無備註說明' ? '' : item.comment;
+
+        // 處理圖片預覽
+        if (item.img) {
+            previewImg.src = item.img;
+            previewImg.style.display = 'block';
+            currentUploadedImgBase64 = item.img;
+            statusText.innerText = "原始雲端圖片已載入";
+        } else {
             previewImg.style.display = 'none';
-            statusText.innerText = "點擊或拖曳圖片至此處上傳";
-            this.style.display = 'none';
-            document.getElementById('btn-submit-form').innerText = "確認新增儲存";
-        });
+            currentUploadedImgBase64 = '';
+            statusText.innerText = "點擊選取圖片檔案";
+        }
 
-        // 一鍵儲存成功回饋
-        document.getElementById('btn-global-save').addEventListener('click', function() {
-            this.classList.remove('unsaved');
+        // 滾動至表單位置
+        document.getElementById('item-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 2. 取消編輯
+    function cancelEdit() {
+        editTargetId = null; // 清空編輯標記
+
+        // 重設表單外觀與標題
+        document.getElementById('form-panel-title').innerText = "新增項目";
+        document.getElementById('btn-submit-form').innerText = "確認新增並同步雲端";
+        document.getElementById('btn-cancel-edit').style.display = 'none';
+        
+        // 重設表單與圖片欄位
+        document.getElementById('item-form').reset();
+        previewImg.style.display = 'none';
+        previewImg.src = '';
+        currentUploadedImgBase64 = '';
+        statusText.innerText = "點擊選取圖片檔案";
+    }
+
+    // 3. 一鍵儲存（或是全域儲存按鈕，配合妳畫面上的設計）
+    function triggerGlobalSave() {
+        showSyncStatus("正在全域備份同步至雲端...");
+        fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: collections })
+        })
+        .then(() => {
+            showSyncStatus("已即時讀取最新雲端資料", true);
             alert('🎉 畫面上所有最新的分類變更、備註修改、與上傳圖片已完美同步儲存至 Google Sheet 雲端空間！');
+        })
+        .catch(err => {
+            console.error(err);
+            showSyncStatus("雲端備份失敗", true);
         });
+    }
     </script>
 </body>
 </html>
