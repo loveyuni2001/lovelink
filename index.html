@@ -518,40 +518,55 @@
         let currentUploadedImgBase64 = ""; 
 
         // === 2. 初始化雲端讀取引擎 ===
-        window.onload = function() {
-            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("請在此處貼上")) {
-                console.log("未偵測到 GAS 網址，使用本地預設測試資料。");
-                renderSystem();
-                return;
+window.onload = function() {
+    if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("請在此處貼上")) {
+        console.log("未偵測到 GAS 網址，使用本地預設測試資料。");
+        renderSystem();
+        return;
+    }
+
+    // 顯示讀取中視覺狀態
+    const gridContainer = document.getElementById('items-grid-container');
+    gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px; font-weight: 500;">⏳ 正在連線至 Google 試算表讀取雲端最新資料中...</div>`;
+
+    // 💡 修正點 1：加上 method: "GET" 與 redirect: "follow" 徹底破解 CORS 限制
+    fetch(GAS_WEB_APP_URL, {
+        method: "GET",
+        redirect: "follow" 
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("網路連線回應錯誤");
+        return res.json();
+    })
+    .then(resData => {
+        // 💡 修正點 2：對應最新版 GAS 的回傳結構 (resData.status 與 resData.data)
+        if (resData && resData.status === "success" && Array.isArray(resData.data)) {
+            
+            // 讀取回來的試算表平鋪陣列
+            const cloudData = resData.data; 
+
+            if (cloudData.length > 0) {
+                // 將試算表資料放入 collections
+                collections = cloudData;
+                
+                // 自動從雲端資料的 category 欄位中萃取出所有不重複的分類
+                const uniqueCategories = [...new Set(cloudData.map(item => item.category).filter(Boolean))];
+                if (uniqueCategories.length > 0) {
+                    categories = uniqueCategories;
+                }
             }
-
-            // 顯示讀取中視覺狀態
-            const gridContainer = document.getElementById('items-grid-container');
-            gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px; font-weight: 500;">⏳ 正在連線至 Google 試算表讀取雲端最新資料中...</div>`;
-
-            fetch(GAS_WEB_APP_URL)
-                .then(res => {
-                    if (!res.ok) throw new Error("網路連線回應錯誤");
-                    return res.json();
-                })
-                .then(data => {
-                    // 若雲端回傳的資料結構有效，則覆蓋本地變數
-                    if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-                        categories = data.categories;
-                    }
-                    if (data.collections && Array.isArray(data.collections)) {
-                        collections = data.collections;
-                    }
-                    console.log("雲端同步加載完畢！");
-                    renderSystem();
-                })
-                .catch(err => {
-                    console.error("讀取雲端失敗，切換為本地預設資料庫:", err);
-                    alert("無法讀取雲端資料，已先載入預設暫存畫面。請檢查 GAS 的 doGet 部署設定。");
-                    renderSystem();
-                });
-        };
-
+            console.log("雲端同步加載完畢！");
+        } else {
+            console.log("雲端目前無資料，載入預設畫面。");
+        }
+        renderSystem();
+    })
+    .catch(err => {
+        console.error("讀取雲端失敗，切換為本地預設資料庫:", err);
+        alert("無法讀取雲端資料，已先載入預設暫存畫面。請檢查 GAS 的部署與網路連線。");
+        renderSystem();
+    });
+};
         // === 3. 介面初始化渲染引擎 ===
         function renderSystem() {
             renderCategories();
@@ -859,5 +874,5 @@
             });
         });
     </script>
-</body>fei004
+</body>fei005
 </html>
