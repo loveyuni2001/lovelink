@@ -517,7 +517,7 @@
         let editTargetId = null;    
         let currentUploadedImgBase64 = ""; 
 
-        // === 2. 初始化雲端讀取引擎 ===
+       // === 2. 初始化雲端讀取引擎 ===
 window.onload = function() {
     if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("請在此處貼上")) {
         console.log("未偵測到 GAS 網址，使用本地預設測試資料。");
@@ -529,41 +529,37 @@ window.onload = function() {
     const gridContainer = document.getElementById('items-grid-container');
     gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px; font-weight: 500;">⏳ 正在連線至 Google 試算表讀取雲端最新資料中...</div>`;
 
-    // 💡 修正點 1：加上 method: "GET" 與 redirect: "follow" 徹底破解 CORS 限制
+    // 發送標準 GET 請求讀取
     fetch(GAS_WEB_APP_URL, {
         method: "GET",
-        redirect: "follow" 
+        redirect: "follow" // ⬅️ 告訴瀏覽器跟隨 Google 的重導向，徹底解開 CORS 鎖
     })
     .then(res => {
         if (!res.ok) throw new Error("網路連線回應錯誤");
         return res.json();
     })
     .then(resData => {
-        // 💡 修正點 2：對應最新版 GAS 的回傳結構 (resData.status 與 resData.data)
+        // 如果雲端成功回傳陣列
         if (resData && resData.status === "success" && Array.isArray(resData.data)) {
-            
-            // 讀取回來的試算表平鋪陣列
             const cloudData = resData.data; 
 
             if (cloudData.length > 0) {
-                // 將試算表資料放入 collections
+                // 把雲端試算表的資料塞進前端的變數
                 collections = cloudData;
                 
-                // 自動從雲端資料的 category 欄位中萃取出所有不重複的分類
+                // 自動從資料中抓出有哪些分類，免得分類選單變空白
                 const uniqueCategories = [...new Set(cloudData.map(item => item.category).filter(Boolean))];
                 if (uniqueCategories.length > 0) {
                     categories = uniqueCategories;
                 }
             }
             console.log("雲端同步加載完畢！");
-        } else {
-            console.log("雲端目前無資料，載入預設畫面。");
         }
         renderSystem();
     })
     .catch(err => {
         console.error("讀取雲端失敗，切換為本地預設資料庫:", err);
-        alert("無法讀取雲端資料，已先載入預設暫存畫面。請檢查 GAS 的部署與網路連線。");
+        alert("無法讀取雲端資料，已先載入預設暫存畫面。請確認 GAS 已部署為最新版本。");
         renderSystem();
     });
 };
@@ -874,5 +870,5 @@ window.onload = function() {
             });
         });
     </script>
-</body>fei005
+</body>fei006
 </html>
