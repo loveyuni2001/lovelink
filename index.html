@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 202606032137
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -482,7 +482,7 @@
     <script>
         // === 1. 系統雲端與基礎組態設定 ===
         // 請在此貼上妳在 Google Apps Script 部署得到的 Web App URL
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWgfzw6d_Kk5osOblW1_azjz4sDelYnTj6ilTu9y1sxi6kVF_2MVOby9h7ndJQ47K80Q/exec"; 
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby8yUxhOon-_AmkLIRLXM_yyf_c_xiREWy9gPb_nrLUQ9pPEe-SPwQaAtMGp1ra4qAP/exec"; 
         
         // 預設分類資料庫（當雲端無資料時作為初始備用）
         let categories = [
@@ -530,14 +530,15 @@ window.onload = function() {
     gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px; font-weight: 500;">⏳ 正在連線至 Google 試算表讀取雲端最新資料中...</div>`;
 
     // 發送標準 GET 請求讀取
-    fetch(GAS_WEB_APP_URL, {
-        method: "GET",
-        redirect: "follow" // ⬅️ 告訴瀏覽器跟隨 Google 的重導向，徹底解開 CORS 鎖
-    })
-    .then(res => {
-        if (!res.ok) throw new Error("網路連線回應錯誤");
-        return res.json();
-    })
+fetch(GAS_WEB_APP_URL, {
+    method: "GET",
+    redirect: "follow" // ⬅️ 確保有這行，瀏覽器就會乖乖帶回資料
+})
+.then(res => res.json())
+.then(cloudData => {
+    // 妳原本的畫面渲染邏輯，直接吃 cloudData 這個陣列
+    console.log("讀取成功：", cloudData);
+});
     .then(resData => {
         // 如果雲端成功回傳陣列
         if (resData && resData.status === "success" && Array.isArray(resData.data)) {
@@ -845,14 +846,17 @@ window.onload = function() {
             btn.innerText = "⏳ 正在同步更新至試算表...";
             
             // 使用標準 POST 機制將最新資料集打包回傳至雲端
-            fetch(GAS_WEB_APP_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain" }, // 使用 text/plain 可完美繞過簡單請求的複雜 Preflight 限制
-                body: JSON.stringify({ 
-                    collections: collections,
-                    categories: categories
-                })
-            })
+fetch(GAS_WEB_APP_URL, {
+    method: "POST",
+    redirect: "follow", // ⬅️ 確保有這行
+    body: JSON.stringify(collections) // 把妳前端存項目的變數丟進去
+})
+.then(res => res.text())
+.then(text => {
+    if(text === "Success") {
+        alert("一鍵同步成功！已安全寫入獨立試算表。");
+    }
+});
             .then(res => res.json())
             .then(result => {
                 btn.disabled = false;
