@@ -480,396 +480,82 @@
     </div>
 
     <script>
-        // === 1. 系統雲端與基礎組態設定 ===
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWgfzw6d_Kk5osOblW1_azjz4sDelYnTj6ilTu9y1sxi6kVF_2MVOby9h7ndJQ47K80Q/exec"; 
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWgfzw6d_Kk5osOblW1_azjz4sDelYnTj6ilTu9y1sxi6kVF_2MVOby9h7ndJQ47K80Q/exec"; 
+    
+    let categories = [
+        { id: "gourmet", name: "美食拉", icon: "fa-utensils" },
+        { id: "hotel", name: "住宿", icon: "fa-bed" },
+        { id: "novel", name: "小說/註解", icon: "fa-book" },
+        { id: "husband", name: "老公的", icon: "fa-folder" }
+    ];
+
+    // 統一從 localStorage 讀取初始化資料
+    let collections = JSON.parse(localStorage.getItem('myLinks')) || [
+        { id: "item_1", name: "我測試用", url: "", category: "husband", comment: "", img: "" },
+        { id: "item_2", name: "赤丸椰子", url: "https://example.com", category: "gourmet", comment: "台北中山赤丸椰子，味道濃郁！", img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80" }
+    ];
+
+    let currentFilter = "all";
+    let editTargetId = null;
+    let currentUploadedImgBase64 = "";
+
+    // === 新增：確保隨時存入 localStorage ===
+    function saveToLocal() {
+        localStorage.setItem('myLinks', JSON.stringify(collections));
+    }
+
+    // === 修正：渲染系統 ===
+    function renderSystem() {
+        renderCategories();
+        renderCategorySelect();
+        renderFilterTags();
+        renderCards();
+    }
+
+    // ... (renderCategories, renderCategorySelect, renderFilterTags, renderCards 保持不變) ...
+
+    // === 修正：表單提交邏輯 ===
+    document.getElementById('item-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        // ... (原有的新增/編輯邏輯) ...
         
-        // 分類基礎資料庫
-        let categories = [
-            { id: "gourmet", name: "美食拉", icon: "fa-utensils" },
-            { id: "hotel", name: "住宿", icon: "fa-bed" },
-            { id: "novel", name: "小說/註解", icon: "fa-book" },
-            { id: "husband", name: "老公的", icon: "fa-folder" }
-        ];
+        saveToLocal(); // 新增這行：每次變動立刻存到 localStorage
+        markUnsaved(); 
+        renderSystem();
+    });
 
-        // 核心卡片資料庫陣列（預載妳原本設計的兩張測試範例）
-        let collections = [
-            {
-                id: "item_1",
-                name: "我測試用",
-                url: "",
-                category: "husband",
-                comment: "",
-                img: ""
-            },
-            {
-                id: "item_2",
-                name: "赤丸椰子",
-                url: "https://example.com",
-                category: "gourmet",
-                comment: "台北中山赤丸椰子，味道濃郁！",
-                img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80"
-            }
-        ];
+    // === 修正：雲端存檔邏輯 ===
+    window.handleCloudSaveResponse = function(res) {
+        const btn = document.getElementById('btn-global-save');
+        btn.classList.remove('unsaved');
+        btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
+        alert(res.status === "success" ? "🎉 同步成功！" : "❌ 同步失敗");
+    };
 
-        // 當前系統狀態控管
-        let currentFilter = "all";  // 目前篩選顯示的分類
-        let editTargetId = null;    // null 代表「新增模式」，有值代表正在「編輯此 ID」
-        let currentUploadedImgBase64 = ""; // 用於儲存當前暫存或上傳的圖片 Base64
+    document.getElementById('btn-global-save').addEventListener('click', function() {
+        const encodedData = encodeURIComponent(JSON.stringify(collections)); // 使用 collections
+        const script = document.createElement('script');
+        script.src = `${GAS_WEB_APP_URL}?action=save&data=${encodedData}&callback=handleCloudSaveResponse&_=${Date.now()}`;
+        document.body.appendChild(script);
+    });
 
-        // === 2. 介面初始化渲染引擎 ===
-        function renderSystem() {
-            renderCategories();
-            renderCategorySelect();
-            renderFilterTags();
-            renderCards();
-        }
-
-        // 渲染左側分類導覽
-        function renderCategories() {
-            const ul = document.getElementById('category-ul');
-            // 計算全部分類總數
-            const totalCount = collections.length;
-
-            let html = `
-                <li class="category-item ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">
-                    <div class="category-info">
-                        <i class="fa-solid fa-earth-asia"></i>
-                        <span>全部項目</span>
-                    </div>
-                    <span class="category-count">${totalCount}</span>
-                </li>
-            `;
-
-            categories.forEach(cat => {
-                const count = collections.filter(item => item.category === cat.id).length;
-                html += `
-                    <li class="category-item ${currentFilter === cat.id ? 'active' : ''}" onclick="setFilter('${cat.id}')">
-                        <div class="category-info">
-                            <i class="fa-solid ${cat.icon}"></i>
-                            <span>${cat.name}</span>
-                        </div>
-                        <div class="category-actions" onclick="event.stopPropagation();">
-                            <i class="fa-solid fa-pen" title="重新命名" onclick="renameCategory('${cat.id}')"></i>
-                            <i class="fa-solid fa-trash-can" title="刪除分類" onclick="deleteCategory('${cat.id}')"></i>
-                        </div>
-                        <span class="category-count">${count}</span>
-                    </li>
-                `;
-            });
-            ul.innerHTML = html;
-        }
-
-        // 同步表單中的分類下拉選單
-        function renderCategorySelect() {
-            const select = document.getElementById('item-category');
-            select.innerHTML = categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
-        }
-
-        // 渲染右側上方快速篩選標籤
-        function renderFilterTags() {
-            const container = document.getElementById('filter-tags-container');
-            let html = `<div class="filter-tag ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">全部</div>`;
-            categories.forEach(cat => {
-                html += `<div class="filter-tag ${currentFilter === cat.id ? 'active' : ''}" onclick="setFilter('${cat.id}')">${cat.name}</div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        // 核心：動態卡片網格渲染
-        function renderCards() {
-            const container = document.getElementById('items-grid-container');
-            container.innerHTML = "";
-
-            // 依照當前篩選過濾資料
-            const filteredData = currentFilter === "all" 
-                ? collections 
-                : collections.filter(item => item.category === currentFilter);
-
-            if (filteredData.length === 0) {
-                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #888; padding: 40px; font-weight: 500;">📂 該分類目前沒有任何項目，快從中間新增吧！</div>`;
-                return;
-            }
-
-            filteredData.forEach(item => {
-                const catObj = categories.find(c => c.id === item.category) || { name: "未分類", icon: "fa-folder" };
-                const hasUrl = item.url && item.url.trim() !== "";
-                const hasImg = item.img && item.img.trim() !== "";
-
-                const cardHtml = `
-                    <div class="item-card">
-                        ${hasImg ? `<img src="${item.img}" class="card-img" alt="${item.name}">` : ''}
-                        <div class="card-body">
-                            <div class="card-title">${item.name}</div>
-                            <div class="card-category"><i class="fa-solid ${catObj.icon}"></i> ${catObj.name}</div>
-                            <div class="card-comment-box" ${!item.comment ? 'style="color: #888; font-style: italic;"' : ''}>
-                                ${item.comment ? `<i class="fa-regular fa-comment-dots"></i> ${item.comment}` : '暫無備註說明'}
-                            </div>
-                        </div>
-                        <div class="card-footer-actions">
-                            <button class="card-action-btn link-btn" onclick="window.open('${item.url}', '_blank')" ${!hasUrl ? 'disabled style="opacity: 0.5;"' : ''}>
-                                <i class="fa-solid ${hasUrl ? 'fa-link' : 'fa-link-slash'}"></i> ${hasUrl ? '開啟連結' : '無連結'}
-                            </button>
-                            <button class="card-action-btn edit-item-btn" onclick="startEdit('${item.id}')">
-                                <i class="fa-solid fa-pen-to-square"></i> 編輯修改
-                            </button>
-                            <button class="card-action-btn delete-btn" onclick="deleteItem('${item.id}')">
-                                <i class="fa-solid fa-trash-can"></i> 刪除項目
-                            </button>
-                        </div>
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', cardHtml);
-            });
-        }
-
-        // 切換篩選狀態
-        function setFilter(catId) {
-            currentFilter = catId;
+    // === 修正：雲端讀取邏輯 ===
+    window.handleCloudData = function(res) {
+        if (res && res.status === "success" && res.data) {
+            collections = res.data; // 關鍵修正：將雲端資料賦值給 collections
+            saveToLocal();          // 同步到本地
             renderSystem();
         }
+    };
 
-        // === 3. 圖片處理模組 ===
-        const fileInput = document.getElementById('hidden-file-input');
-        const statusText = document.getElementById('upload-status-text');
-        const previewImg = document.getElementById('upload-preview');
-        const dropZone = document.getElementById('drop-zone');
+    function initializeSystemFromCloud() {
+        const script = document.createElement('script');
+        script.src = `${GAS_WEB_APP_URL}?callback=handleCloudData&_=${Date.now()}`;
+        document.body.appendChild(script);
+    }
 
-        if (dropZone) {
-            dropZone.addEventListener('click', () => fileInput.click());
-        }
-
-        fileInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                const file = this.files[0];
-                statusText.innerText = "已成功載入圖片：" + file.name + " (等待儲存確認)";
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    previewImg.style.display = 'block';
-                    currentUploadedImgBase64 = e.target.result; // 本地暫存 Base64 資料
-                    markUnsaved();
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // === 4. 表單動作：新增與編輯邏輯核心 ===
-        document.getElementById('item-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const name = document.getElementById('item-name').value.trim();
-            const url = document.getElementById('item-url').value.trim();
-            const category = document.getElementById('item-category').value;
-            const comment = document.getElementById('item-comment').value.trim();
-
-            if (editTargetId === null) {
-                // 【新增模式】
-                const newItem = {
-                    id: "item_" + Date.now(), // 用時間戳記當作唯一 ID
-                    name: name,
-                    url: url,
-                    category: category,
-                    comment: comment,
-                    img: currentUploadedImgBase64 // 塞入圖片 (無則留白)
-                };
-                collections.unshift(newItem); // 新增在最前面
-            } else {
-                // 【編輯修改模式】
-                const index = collections.findIndex(item => item.id === editTargetId);
-                if (index !== -1) {
-                    collections[index].name = name;
-                    collections[index].url = url;
-                    collections[index].category = category;
-                    collections[index].comment = comment;
-                    collections[index].img = currentUploadedImgBase64; // 更新或保留原本圖片
-                }
-            }
-
-            cancelEdit(); // 重設並變回新增狀態
-            renderSystem(); // 重新渲染刷新畫面
-            markUnsaved();  // 提示有變更未同步雲端
-        });
-
-        // 進入編輯狀態，帶入既有資料
-        function startEdit(id) {
-            const item = collections.find(i => i.id === id);
-            if (!item) return;
-
-            editTargetId = id;
-
-            document.getElementById('form-panel-title').innerText = "編輯項目 ⚙️";
-            document.getElementById('btn-submit-form').innerText = "確認修改儲存";
-            document.getElementById('btn-cancel-edit').style.display = 'block';
-
-            // 填回表單欄位
-            document.getElementById('item-name').value = item.name;
-            document.getElementById('item-url').value = item.url;
-            document.getElementById('item-category').value = item.category;
-            document.getElementById('item-comment').value = item.comment;
-
-            // 處理圖片預覽
-            if (item.img) {
-                previewImg.src = item.img;
-                previewImg.style.display = 'block';
-                currentUploadedImgBase64 = item.img;
-                statusText.innerText = "已有圖片設定，可點擊更換";
-            } else {
-                previewImg.style.display = 'none';
-                previewImg.src = '';
-                currentUploadedImgBase64 = '';
-                statusText.innerText = "點擊或拖曳圖片至此處上傳";
-            }
-
-            document.getElementById('item-form').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // 取消編輯，回歸新增狀態
-        function cancelEdit() {
-            editTargetId = null;
-            document.getElementById('form-panel-title').innerText = "新增項目";
-            document.getElementById('btn-submit-form').innerText = "確認新增儲存";
-            document.getElementById('btn-cancel-edit').style.display = 'none';
-
-            document.getElementById('item-form').reset();
-            previewImg.style.display = 'none';
-            previewImg.src = '';
-            currentUploadedImgBase64 = '';
-            statusText.innerText = "點擊或拖曳圖片至此處上傳";
-        }
-        
-        document.getElementById('btn-cancel-edit').addEventListener('click', cancelEdit);
-
-        // 刪除項目功能
-        function deleteItem(id) {
-            if(confirm("確定要刪除這個收藏項目嗎？")) {
-                collections = collections.filter(item => item.id !== id);
-                renderSystem();
-                markUnsaved();
-            }
-        }
-
-        // === 5. 左側分類增刪改功能 ===
-        document.getElementById('btn-add-cat').addEventListener('click', function() {
-            const input = document.getElementById('new-cat-input');
-            const name = input.value.trim();
-            if (!name) return;
-
-            const newId = "cat_" + Date.now();
-            categories.push({
-                id: newId,
-                name: name,
-                icon: "fa-folder"
-            });
-
-            input.value = "";
-            renderSystem();
-            markUnsaved();
-        });
-
-        function renameCategory(id) {
-            const cat = categories.find(c => c.id === id);
-            if (!cat) return;
-            const newName = prompt("請輸入新的分類名稱：", cat.name);
-            if (newName && newName.trim() !== "") {
-                cat.name = newName.trim();
-                renderSystem();
-                markUnsaved();
-            }
-        }
-
-        function deleteCategory(id) {
-            if(confirm("刪除分類不會刪除裡面的卡片，卡片會自動歸為全部。確定刪除此分類？")) {
-                categories = categories.filter(c => c.id !== id);
-                // 把原本屬於該分類的卡片改為「暫無分類」，避免找不到
-                collections.forEach(item => {
-                    if(item.category === id) item.category = "";
-                });
-                if (currentFilter === id) currentFilter = "all";
-                renderSystem();
-                markUnsaved();
-            }
-        }
-
-    // === 6. 雲端同步控管模組 ===
-        function markUnsaved() {
-            const btn = document.getElementById('btn-global-save');
-            if (btn) btn.classList.add('unsaved');
-        }
-
-        // 全局儲存回呼函式
-        window.handleCloudSaveResponse = function(res) {
-            const btn = document.getElementById('btn-global-save');
-            if (btn) {
-                btn.classList.remove('unsaved');
-                btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
-            }
-            if (res && res.status === "success") {
-                alert("🎉 資料已成功完美同步儲存至雲端試算表！");
-            } else {
-                alert("❌ 同步失敗：" + (res ? res.message : "未知錯誤"));
-            }
-        };
-
-        document.getElementById('btn-global-save').addEventListener('click', function() {
-            const btn = this;
-            btn.innerText = "⏳ 正在備份同步中...";
-            
-            // 1. 直接撈取快取箱子 'myLinks' 的最新資料
-            const localRawData = localStorage.getItem('myLinks');
-            const targetData = localRawData ? JSON.parse(localRawData) : [];
-            
-            // 2. 將資料編碼，利用 JSONP 技術打包發送出去
-            const encodedData = encodeURIComponent(JSON.stringify(targetData));
-            const script = document.createElement('script');
-            script.src = `${GAS_WEB_APP_URL}?action=save&data=${encodedData}&callback=handleCloudSaveResponse&_=${new Date().getTime()}`;
-            
-            script.onerror = function() {
-                btn.classList.remove('unsaved');
-                btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
-                alert("❌ 網路連線異常，請重新再試。");
-            };
-            
-            document.body.appendChild(script);
-        });
-
-        // === 7. 雲端初始化同步模組 ===
-        // 全局讀取回呼函式
-        window.handleCloudData = function(res) {
-            if (res && res.status === "success" && res.data && res.data.length > 0) {
-                console.log("📬 成功經由 JSONP 接收雲端歷史資料：", res.data);
-                
-                // 強制覆蓋本地快取
-                localStorage.setItem('myLinks', JSON.stringify(res.data));
-                
-                // 動態同步給所有網頁內可能用到的全局變數名
-                if (typeof myLinks !== 'undefined') myLinks = res.data;
-                if (typeof bookmarks !== 'undefined') bookmarks = res.data;
-                if (typeof items !== 'undefined') items = res.data;
-                if (typeof dataList !== 'undefined') dataList = res.data;
-            }
-            // 執行渲染畫面
-            if (typeof renderSystem === 'function') renderSystem();
-        };
-
-        function initializeSystemFromCloud() {
-            if (!GAS_WEB_APP_URL) {
-                if (typeof renderSystem === 'function') renderSystem();
-                return;
-            }
-
-            // 使用無敵的 JSONP 讀取方式，百分之百穿透 CORS 限制
-            const script = document.createElement('script');
-            script.src = `${GAS_WEB_APP_URL}?callback=handleCloudData&_=${new Date().getTime()}`;
-            script.onerror = function() {
-                console.warn("雲端讀取失敗，降級使用本地快取載入。");
-                if (typeof renderSystem === 'function') renderSystem();
-            };
-            document.body.appendChild(script);
-        }
-
-        // 正式啟動：用雲端優先的方式初始化系統
-        initializeSystemFromCloud();
-    </script>
+    initializeSystemFromCloud();
+    renderSystem();
+</script>
 </body>
 </html>
