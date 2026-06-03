@@ -1,4 +1,4 @@
-<!DOCTYPE html>202606032157
+<!DOCTYPE html>202606032216
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -43,6 +43,7 @@
             align-items: center;
             margin-bottom: 24px;
             padding: 0 8px;
+            gap: 16px;
         }
 
         .system-title {
@@ -67,6 +68,8 @@
             align-items: center;
             gap: 8px;
             transition: transform 0.1s;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         .global-save-btn:active {
             transform: translate(2px, 2px);
@@ -83,7 +86,7 @@
             100% { transform: scale(1); }
         }
 
-        /* 主佈局容器 */
+        /* 主佈局容器 (電腦版三欄並排) */
         .main-container {
             display: grid;
             grid-template-columns: 280px 420px 1fr;
@@ -399,6 +402,55 @@
         #hidden-file-input {
             display: none;
         }
+
+        /* ============================================================
+           📱 關鍵修正：手機/行動端專屬 RWD 響應式 CSS 樣式 (小於 992px 啟動)
+           ============================================================ */
+        @media (max-width: 992px) {
+            body {
+                padding: 12px; /* 縮小邊距讓畫面極大化 */
+            }
+
+            .top-bar {
+                flex-direction: column; /* 頂部標題與按鈕直排 */
+                align-items: stretch;
+                gap: 12px;
+                margin-bottom: 16px;
+            }
+
+            .system-title {
+                font-size: 20px;
+                justify-content: center;
+            }
+
+            .global-save-btn {
+                width: 100%; /* 按鈕變滿版，方便大拇指按 */
+                justify-content: center;
+                padding: 14px;
+            }
+
+            /* 核心：把原本橫向並排的電腦 grid 破解掉，改成全部上下直排！ */
+            .main-container {
+                grid-template-columns: 1fr; 
+                gap: 16px;
+            }
+
+            .panel-box {
+                padding: 16px; /* 稍微縮小內襯墊，讓文字空間變大 */
+                border-radius: 16px;
+            }
+
+            /* 手機版分類列表動作按鈕直接顯示（不依賴 hover，因為手機不能 hover） */
+            .category-actions {
+                display: flex !important; 
+            }
+
+            /* 卡片網格在手機版自動調整寬度 */
+            .items-grid {
+                grid-template-columns: 1fr; /* 手機一列排一張卡片，最舒服 */
+                gap: 16px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -414,6 +466,7 @@
 
     <div class="main-container">
         
+        <!-- 區塊一：管理導覽 -->
         <div class="panel-box">
             <div class="panel-title">
                 <span>管理導覽</span>
@@ -428,6 +481,7 @@
             </div>
         </div>
 
+        <!-- 區塊二：編輯/新增表單 -->
         <div class="panel-box">
             <div class="form-panel-title" id="form-panel-title" style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">新增項目</div>
             
@@ -469,6 +523,7 @@
             </form>
         </div>
 
+        <!-- 區塊三：資料顯示網格與標籤篩選 -->
         <div class="right-section">
             <div class="filter-tags-row" id="filter-tags-container">
             </div>
@@ -484,33 +539,15 @@
         // ⚠️ 請在此處填入妳重新部署 lovelink 雙表分流版後取得的專屬 /exec 網址：
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby8yUxhOon-_AmkLIRLXM_yyf_c_xiREWy9gPb_nrLUQ9pPEe-SPwQaAtMGp1ra4qAP/exec"; 
         
-        // 預設分類與卡片（當雲端完全沒資料時，才會初始化使用這組）
         let categories = [
-            { id: "gourmet", name: "美食拉", icon: "fa-utensils" },
+            { id: "gourmet", name: "美食", icon: "fa-utensils" },
             { id: "hotel", name: "住宿", icon: "fa-bed" },
-            { id: "novel", name: "小說/註解", icon: "fa-book" },
-            { id: "husband", name: "老公的", icon: "fa-folder" }
+            { id: "novel", name: "小說", icon: "fa-book" },
+            { id: "goods", name: "小物", icon: "fa-folder" },
+            { id: "animal", name: "動物", icon: "fa-folder" }
         ];
 
-        let collections = [
-            {
-                id: "item_1",
-                name: "我測試用",
-                url: "",
-                category: "husband",
-                comment: "",
-                img: ""
-            },
-            {
-                id: "item_2",
-                name: "赤丸椰子",
-                url: "https://example.com",
-                category: "gourmet",
-                comment: "台北中山赤丸椰子，味道濃郁！",
-                img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80"
-            }
-        ];
-
+        let collections = [];
         let currentFilter = "all";  
         let editTargetId = null;    
         let currentUploadedImgBase64 = ""; 
@@ -528,7 +565,6 @@
             fetch(GAS_WEB_APP_URL, { method: "GET", redirect: "follow" })
                 .then(res => res.json())
                 .then(cloudData => {
-                    // 如果雲端已經存有資料，就用雲端的蓋掉本地預設值
                     if (cloudData.categories && cloudData.categories.length > 0) {
                         categories = cloudData.categories;
                     }
@@ -632,10 +668,10 @@
                                 <i class="fa-solid ${hasUrl ? 'fa-link' : 'fa-link-slash'}"></i> ${hasUrl ? '開啟連結' : '無連結'}
                             </button>
                             <button class="card-action-btn edit-item-btn" onclick="startEdit('${item.id}')">
-                                <i class="fa-solid fa-pen-to-square"></i> 編輯修改
+                                <i class="fa-solid fa-pen-to-square"></i> 編輯
                             </button>
                             <button class="card-action-btn delete-btn" onclick="deleteItem('${item.id}')">
-                                <i class="fa-solid fa-trash-can"></i> 刪除項目
+                                <i class="fa-solid fa-trash-can"></i> 刪除
                             </button>
                         </div>
                     </div>
@@ -662,7 +698,7 @@
         fileInput.addEventListener('change', function() {
             if (this.files && this.files[0]) {
                 const file = this.files[0];
-                statusText.innerText = "已成功載入圖片：" + file.name + " (等待儲存確認)";
+                statusText.innerText = "已載入圖片：" + file.name;
                 
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -793,7 +829,7 @@
         }
 
         function deleteCategory(id) {
-            if(confirm("刪除分類不會刪除裡面的卡片，卡片會自動歸為全部。確定刪除此分類？")) {
+            if(confirm("刪除分類不會刪除裡面的卡片。確定刪除此分類？")) {
                 categories = categories.filter(c => c.id !== id);
                 collections.forEach(item => {
                     if(item.category === id) item.category = "";
@@ -831,7 +867,7 @@
                 btn.classList.remove('unsaved');
                 btn.innerHTML = originalText;
                 if (text === "Success") {
-                    alert('🎉 畫面上所有最新的分類變更、備註修改、與上傳圖片已完美同步儲存至雲端Lovlink獨立空間！');
+                    alert('🎉 畫面上所有最新的分類變更、備註修改、與上傳圖片已完美同步儲存至雲端試算表！');
                 } else {
                     alert('同步時發生問題：' + text);
                 }
@@ -840,11 +876,10 @@
                 btn.disabled = false;
                 btn.innerHTML = originalText;
                 console.error(err);
-                alert('連線失敗，請確認妳的 GAS 網址是否正確部署且具備任何人存取權限！');
+                alert('連線失敗，請確認網路或 GAS 網址部署！');
             });
         });
 
-        // 啟動初始化讀取雲端
         initFromCloud();
     </script>
 </body>
