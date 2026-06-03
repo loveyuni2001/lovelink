@@ -855,47 +855,57 @@ window.handleCloudData = function(res) {
     renderSystem();
 };
 
-// === 修正後的完全本地化資料模組 ===
+// === 徹底移除雲端依賴，改為純本地運行 ===
+// 確保全域變數存在
+let collections = JSON.parse(localStorage.getItem('myLinks')) || [];
 
-// 1. 初始化時改為讀取本地資料
-function initSystem() {
-    const localData = localStorage.getItem('myLinks');
-    if (localData) {
-        try {
-            collections = JSON.parse(localData);
-        } catch(e) {
-            collections = [];
-        }
-    } else {
-        collections = []; // 給予預設空陣列
-    }
+// 初始化 UI
+function initUI() {
+    console.log("系統初始化...");
+    // 直接渲染，不再嘗試呼叫任何雲端功能
     renderSystem();
-    console.log("系統已載入本地資料，無需雲端連線。");
 }
 
-// 2. 當使用者點擊「儲存」時，直接存入瀏覽器，不再呼叫 GAS
-function saveLocally() {
+// 核心渲染邏輯：將卡片畫出來
+function renderSystem() {
+    renderCards();
+    renderCategories();
+}
+
+function renderCards() {
+    const container = document.getElementById('items-grid-container');
+    if (!container) return;
+    
+    container.innerHTML = "";
+    if (collections.length === 0) {
+        container.innerHTML = `<div style="text-align: center; padding: 40px;">目前沒有項目，請新增一個吧！</div>`;
+        return;
+    }
+
+    collections.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+            <div class="card-body">
+                <div class="card-title">${item.name || '無標題'}</div>
+                <div class="card-comment-box">${item.comment || '暫無備註'}</div>
+            </div>
+            <div class="card-footer-actions">
+                <button onclick="deleteItem('${item.id}')">刪除</button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function deleteItem(id) {
+    collections = collections.filter(i => i.id !== id);
     localStorage.setItem('myLinks', JSON.stringify(collections));
-    alert("✅ 資料已成功儲存至瀏覽器！");
+    renderSystem();
 }
 
-// 3. 匯出功能 (備份用)
-function exportData() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(collections));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "my_data.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-}
-
-// 啟動
-initSystem();
-}
-
-// 確保執行順序：網頁一打開就呼叫
-initSystem();
+// 頁面載入後自動啟動
+document.addEventListener('DOMContentLoaded', initUI);
     </script>
-</body> TEST0002
+</body> TEST0003
 </html>
