@@ -1,4 +1,4 @@
-<!DOCTYPE html>202606032146
+<!DOCTYPE html>202606032157
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -405,7 +405,7 @@
 
     <div class="top-bar">
         <div class="system-title">
-            <i class="fa-solid fa-box-archive"></i> 收藏與註解管理後台
+            <i class="fa-solid fa-box-archive"></i> 收藏與註解管理後台 (Lovelink版)
         </div>
         <button class="global-save-btn" id="btn-global-save">
             <i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端
@@ -420,7 +420,7 @@
                 <i class="fa-solid fa-folder-gear" style="color: #666;"></i>
             </div>
             <ul class="category-list" id="category-ul">
-                </ul>
+            </ul>
             
             <div class="add-category-inline">
                 <input type="text" id="new-cat-input" placeholder="新增分類名稱...">
@@ -429,7 +429,7 @@
         </div>
 
         <div class="panel-box">
-            <div class="panel-title" id="form-panel-title">新增項目</div>
+            <div class="form-panel-title" id="form-panel-title" style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">新增項目</div>
             
             <form id="item-form">
                 <div class="form-group">
@@ -450,13 +450,13 @@
                         <p id="upload-status-text">點擊或拖曳圖片至此處上傳</p>
                         <img id="upload-preview" class="preview-thumbnail" alt="預覽圖">
                     </div>
-                    <a href="#" class="cloud-link" target="_blank"><i class="fa-solid fa-images"></i> 點此開啟妳的雲端硬碟相簿</a>
+                    <a href="https://drive.google.com" class="cloud-link" target="_blank"><i class="fa-solid fa-images"></i> 點此開啟妳的雲端硬碟相簿</a>
                 </div>
 
                 <div class="form-group">
                     <label>選擇分類</label>
                     <select class="form-control" id="item-category">
-                        </select>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -471,19 +471,20 @@
 
         <div class="right-section">
             <div class="filter-tags-row" id="filter-tags-container">
-                </div>
+            </div>
 
             <div class="items-grid" id="items-grid-container">
-                </div>
+            </div>
         </div>
 
     </div>
 
     <script>
         // === 1. 系統雲端與基礎組態設定 ===
+        // ⚠️ 請在此處填入妳重新部署 lovelink 雙表分流版後取得的專屬 /exec 網址：
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby8yUxhOon-_AmkLIRLXM_yyf_c_xiREWy9gPb_nrLUQ9pPEe-SPwQaAtMGp1ra4qAP/exec"; 
         
-        // 分類基礎資料庫
+        // 預設分類與卡片（當雲端完全沒資料時，才會初始化使用這組）
         let categories = [
             { id: "gourmet", name: "美食拉", icon: "fa-utensils" },
             { id: "hotel", name: "住宿", icon: "fa-bed" },
@@ -491,7 +492,6 @@
             { id: "husband", name: "老公的", icon: "fa-folder" }
         ];
 
-        // 核心卡片資料庫陣列（預載妳原本設計的兩張測試範例）
         let collections = [
             {
                 id: "item_1",
@@ -511,12 +511,40 @@
             }
         ];
 
-        // 當前系統狀態控管
-        let currentFilter = "all";  // 目前篩選顯示的分類
-        let editTargetId = null;    // null 代表「新增模式」，有值代表正在「編輯此 ID」
-        let currentUploadedImgBase64 = ""; // 用於儲存當前暫存或上傳的圖片 Base64
+        let currentFilter = "all";  
+        let editTargetId = null;    
+        let currentUploadedImgBase64 = ""; 
 
-        // === 2. 介面初始化渲染引擎 ===
+        // === 2. 雲端資料初始化讀取模組 ===
+        function initFromCloud() {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS_URL")) {
+                console.log("未設定正確的 GAS 網址，使用本地測試預設資料。");
+                renderSystem();
+                return;
+            }
+
+            document.getElementById('items-grid-container').innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px; font-weight: 500;">⏳ 正在安全連線並同步雲端Lovlink試算表中...</div>`;
+
+            fetch(GAS_WEB_APP_URL, { method: "GET", redirect: "follow" })
+                .then(res => res.json())
+                .then(cloudData => {
+                    // 如果雲端已經存有資料，就用雲端的蓋掉本地預設值
+                    if (cloudData.categories && cloudData.categories.length > 0) {
+                        categories = cloudData.categories;
+                    }
+                    if (cloudData.collections) {
+                        collections = cloudData.collections;
+                    }
+                    console.log("雲端Lovlink資料載入成功：", cloudData);
+                    renderSystem();
+                })
+                .catch(err => {
+                    console.error("讀取失敗，使用預設資料控管：", err);
+                    renderSystem();
+                });
+        }
+
+        // === 3. 介面初始化渲染引擎 ===
         function renderSystem() {
             renderCategories();
             renderCategorySelect();
@@ -524,10 +552,8 @@
             renderCards();
         }
 
-        // 渲染左側分類導覽
         function renderCategories() {
             const ul = document.getElementById('category-ul');
-            // 計算全部分類總數
             const totalCount = collections.length;
 
             let html = `
@@ -559,13 +585,11 @@
             ul.innerHTML = html;
         }
 
-        // 同步表單中的分類下拉選單
         function renderCategorySelect() {
             const select = document.getElementById('item-category');
             select.innerHTML = categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
         }
 
-        // 渲染右側上方快速篩選標籤
         function renderFilterTags() {
             const container = document.getElementById('filter-tags-container');
             let html = `<div class="filter-tag ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">全部</div>`;
@@ -575,12 +599,10 @@
             container.innerHTML = html;
         }
 
-        // 核心：動態卡片網格渲染
         function renderCards() {
             const container = document.getElementById('items-grid-container');
             container.innerHTML = "";
 
-            // 依照當前篩選過濾資料
             const filteredData = currentFilter === "all" 
                 ? collections 
                 : collections.filter(item => item.category === currentFilter);
@@ -622,13 +644,12 @@
             });
         }
 
-        // 切換篩選狀態
         function setFilter(catId) {
             currentFilter = catId;
             renderSystem();
         }
 
-        // === 3. 圖片處理模組 ===
+        // === 4. 圖片處理模組 ===
         const fileInput = document.getElementById('hidden-file-input');
         const statusText = document.getElementById('upload-status-text');
         const previewImg = document.getElementById('upload-preview');
@@ -647,14 +668,14 @@
                 reader.onload = function(e) {
                     previewImg.src = e.target.result;
                     previewImg.style.display = 'block';
-                    currentUploadedImgBase64 = e.target.result; // 本地暫存 Base64 資料
+                    currentUploadedImgBase64 = e.target.result; 
                     markUnsaved();
                 }
                 reader.readAsDataURL(file);
             }
         });
 
-        // === 4. 表單動作：新增與編輯邏輯核心 ===
+        // === 5. 表單動作：新增與編輯邏輯 ===
         document.getElementById('item-form').addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -664,34 +685,31 @@
             const comment = document.getElementById('item-comment').value.trim();
 
             if (editTargetId === null) {
-                // 【新增模式】
                 const newItem = {
-                    id: "item_" + Date.now(), // 用時間戳記當作唯一 ID
+                    id: "item_" + Date.now(), 
                     name: name,
                     url: url,
                     category: category,
                     comment: comment,
-                    img: currentUploadedImgBase64 // 塞入圖片 (無則留白)
+                    img: currentUploadedImgBase64 
                 };
-                collections.unshift(newItem); // 新增在最前面
+                collections.unshift(newItem); 
             } else {
-                // 【編輯修改模式】
                 const index = collections.findIndex(item => item.id === editTargetId);
                 if (index !== -1) {
                     collections[index].name = name;
                     collections[index].url = url;
                     collections[index].category = category;
                     collections[index].comment = comment;
-                    collections[index].img = currentUploadedImgBase64; // 更新或保留原本圖片
+                    collections[index].img = currentUploadedImgBase64; 
                 }
             }
 
-            cancelEdit(); // 重設並變回新增狀態
-            renderSystem(); // 重新渲染刷新畫面
-            markUnsaved();  // 提示有變更未同步雲端
+            cancelEdit(); 
+            renderSystem(); 
+            markUnsaved();  
         });
 
-        // 進入編輯狀態，帶入既有資料
         function startEdit(id) {
             const item = collections.find(i => i.id === id);
             if (!item) return;
@@ -702,13 +720,11 @@
             document.getElementById('btn-submit-form').innerText = "確認修改儲存";
             document.getElementById('btn-cancel-edit').style.display = 'block';
 
-            // 填回表單欄位
             document.getElementById('item-name').value = item.name;
             document.getElementById('item-url').value = item.url;
             document.getElementById('item-category').value = item.category;
             document.getElementById('item-comment').value = item.comment;
 
-            // 處理圖片預覽
             if (item.img) {
                 previewImg.src = item.img;
                 previewImg.style.display = 'block';
@@ -724,7 +740,6 @@
             document.getElementById('item-form').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // 取消編輯，回歸新增狀態
         function cancelEdit() {
             editTargetId = null;
             document.getElementById('form-panel-title').innerText = "新增項目";
@@ -740,7 +755,6 @@
         
         document.getElementById('btn-cancel-edit').addEventListener('click', cancelEdit);
 
-        // 刪除項目功能
         function deleteItem(id) {
             if(confirm("確定要刪除這個收藏項目嗎？")) {
                 collections = collections.filter(item => item.id !== id);
@@ -749,7 +763,7 @@
             }
         }
 
-        // === 5. 左側分類增刪改功能 ===
+        // === 6. 左側分類功能 ===
         document.getElementById('btn-add-cat').addEventListener('click', function() {
             const input = document.getElementById('new-cat-input');
             const name = input.value.trim();
@@ -781,7 +795,6 @@
         function deleteCategory(id) {
             if(confirm("刪除分類不會刪除裡面的卡片，卡片會自動歸為全部。確定刪除此分類？")) {
                 categories = categories.filter(c => c.id !== id);
-                // 把原本屬於該分類的卡片改為「暫無分類」，避免找不到
                 collections.forEach(item => {
                     if(item.category === id) item.category = "";
                 });
@@ -791,41 +804,48 @@
             }
         }
 
-        // === 6. 雲端同步控管模組 ===
+        // === 7. 雲端備份同步模組 ===
         function markUnsaved() {
             document.getElementById('btn-global-save').classList.add('unsaved');
         }
 
         document.getElementById('btn-global-save').addEventListener('click', function() {
             const btn = this;
+            const originalText = btn.innerHTML;
             btn.innerText = "⏳ 正在備份同步中...";
+            btn.disabled = true;
+
+            const payload = {
+                categories: categories,
+                collections: collections
+            };
             
-            // 如果妳已經部署好 GAS 服務，此處會將完整的卡片陣列與分類陣列直接發送過去
             fetch(GAS_WEB_APP_URL, {
                 method: "POST",
-                mode: "no-cors", // 防止跨網域阻擋
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    collections: collections,
-                    categories: categories
-                })
+                redirect: "follow",
+                body: JSON.stringify(payload)
             })
-            .then(() => {
+            .then(res => res.text())
+            .then(text => {
+                btn.disabled = false;
                 btn.classList.remove('unsaved');
-                btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
-                alert('🎉 畫面上所有最新的分類變更、備註修改、與上傳圖片已完美同步儲存至雲端空間！');
+                btn.innerHTML = originalText;
+                if (text === "Success") {
+                    alert('🎉 畫面上所有最新的分類變更、備註修改、與上傳圖片已完美同步儲存至雲端Lovlink獨立空間！');
+                } else {
+                    alert('同步時發生問題：' + text);
+                }
             })
             .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
                 console.error(err);
-                // 因為沒填正確的 URL 時會進 catch，但為了能讓妳先離線測試，我們在此處也算它成功：
-                btn.classList.remove('unsaved');
-                btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> 一鍵儲存並同步至雲端`;
-                alert('本地資料暫存成功！(如需同步 Google Sheet，請將妳的 GAS 部署網址填入程式碼第 471 行的 GAS_WEB_APP_URL 變數中！)');
+                alert('連線失敗，請確認妳的 GAS 網址是否正確部署且具備任何人存取權限！');
             });
         });
 
-        // 初始化系統執行
-        renderSystem();
+        // 啟動初始化讀取雲端
+        initFromCloud();
     </script>
 </body>
 </html>
