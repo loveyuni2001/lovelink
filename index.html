@@ -833,43 +833,48 @@
             document.body.appendChild(script);
         });
 
-        // === 7. 雲端初始化同步模組 ===
-        // 全局讀取回呼函式
-        window.handleCloudData = function(res) {
-            if (res && res.status === "success" && res.data && res.data.length > 0) {
-                console.log("📬 成功經由 JSONP 接收雲端歷史資料：", res.data);
-                
-                // 強制覆蓋本地快取
-                localStorage.setItem('myLinks', JSON.stringify(res.data));
-                
-                // 動態同步給所有網頁內可能用到的全局變數名
-                if (typeof myLinks !== 'undefined') myLinks = res.data;
-                if (typeof bookmarks !== 'undefined') bookmarks = res.data;
-                if (typeof items !== 'undefined') items = res.data;
-                if (typeof dataList !== 'undefined') dataList = res.data;
-            }
-            // 執行渲染畫面
-            if (typeof renderSystem === 'function') renderSystem();
-        };
-
-        function initializeSystemFromCloud() {
-            if (!GAS_WEB_APP_URL) {
-                if (typeof renderSystem === 'function') renderSystem();
-                return;
-            }
-
-            // 使用無敵的 JSONP 讀取方式，百分之百穿透 CORS 限制
-            const script = document.createElement('script');
-            script.src = `${GAS_WEB_APP_URL}?callback=handleCloudData&_=${new Date().getTime()}`;
-            script.onerror = function() {
-                console.warn("雲端讀取失敗，降級使用本地快取載入。");
-                if (typeof renderSystem === 'function') renderSystem();
-            };
-            document.body.appendChild(script);
+       // === 7. 雲端初始化同步模組 ===
+window.handleCloudData = function(res) {
+    if (res && res.status === "success" && res.data) {
+        console.log("📬 成功經由 JSONP 接收雲端資料");
+        
+        // 【核心修正】將接收到的資料正確賦值給 collections 陣列
+        collections = res.data; 
+        
+        // 同步存入本地快取
+        localStorage.setItem('myLinks', JSON.stringify(res.data));
+    } else {
+        console.warn("雲端無資料或讀取失敗，嘗試載入本地快取");
+        const localData = localStorage.getItem('myLinks');
+        if (localData) {
+            collections = JSON.parse(localData);
         }
+    }
+    
+    // 【關鍵修復】確保資料更新後，強制重繪整個系統
+    renderSystem();
+};
 
-        // 正式啟動：用雲端優先的方式初始化系統
-        initializeSystemFromCloud();
+function initializeSystemFromCloud() {
+    if (!GAS_WEB_APP_URL) {
+        renderSystem();
+        return;
+    }
+
+    const script = document.createElement('script');
+    // 確保網址後帶有時間戳記避免快取
+    script.src = `${GAS_WEB_APP_URL}?callback=handleCloudData&_=${new Date().getTime()}`;
+    script.onerror = function() {
+        console.error("網路連線失敗，自動載入本地資料...");
+        const localData = localStorage.getItem('myLinks');
+        if (localData) collections = JSON.parse(localData);
+        renderSystem();
+    };
+    document.body.appendChild(script);
+}
+
+// 啟動系統
+initializeSystemFromCloud();
     </script>
 </body>
 </html>
