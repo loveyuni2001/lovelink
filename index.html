@@ -855,31 +855,10 @@ window.handleCloudData = function(res) {
     renderSystem();
 };
 
-// === 修正後的啟動初始化 ===
+// === 修正後的完全本地化資料模組 ===
+
+// 1. 初始化時改為讀取本地資料
 function initSystem() {
-    console.log("系統開始初始化...");
-    
-    // 檢查 GAS URL 是否存在
-    if (typeof GAS_WEB_APP_URL === 'undefined' || !GAS_WEB_APP_URL) {
-        console.warn("未設定雲端網址，載入本地快取");
-        loadLocalData();
-        return;
-    }
-
-    // 建立 JSONP 請求
-    const script = document.createElement('script');
-    script.src = `${GAS_WEB_APP_URL}?callback=handleCloudData&_=${new Date().getTime()}`;
-    
-    script.onerror = function() {
-        console.error("雲端連線失敗，自動載入本地資料...");
-        loadLocalData();
-    };
-    
-    document.body.appendChild(script);
-}
-
-// 輔助函式：統一讀取本地資料並渲染
-function loadLocalData() {
     const localData = localStorage.getItem('myLinks');
     if (localData) {
         try {
@@ -887,12 +866,36 @@ function loadLocalData() {
         } catch(e) {
             collections = [];
         }
+    } else {
+        collections = []; // 給予預設空陣列
     }
     renderSystem();
+    console.log("系統已載入本地資料，無需雲端連線。");
+}
+
+// 2. 當使用者點擊「儲存」時，直接存入瀏覽器，不再呼叫 GAS
+function saveLocally() {
+    localStorage.setItem('myLinks', JSON.stringify(collections));
+    alert("✅ 資料已成功儲存至瀏覽器！");
+}
+
+// 3. 匯出功能 (備份用)
+function exportData() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(collections));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "my_data.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+// 啟動
+initSystem();
 }
 
 // 確保執行順序：網頁一打開就呼叫
 initSystem();
     </script>
-</body> TEST0001
+</body> TEST0002
 </html>
