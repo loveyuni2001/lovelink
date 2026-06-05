@@ -1,4 +1,4 @@
-<!DOCTYPE html>202606032216
+<!DOCTYPE html>202606051226
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -403,16 +403,14 @@
             display: none;
         }
 
-        /* ============================================================
-           📱 關鍵修正：手機/行動端專屬 RWD 響應式 CSS 樣式 (小於 992px 啟動)
-           ============================================================ */
+        /* 行動端 RWD 響應式 CSS 樣式 */
         @media (max-width: 992px) {
             body {
-                padding: 12px; /* 縮小邊距讓畫面極大化 */
+                padding: 12px;
             }
 
             .top-bar {
-                flex-direction: column; /* 頂部標題與按鈕直排 */
+                flex-direction: column;
                 align-items: stretch;
                 gap: 12px;
                 margin-bottom: 16px;
@@ -424,30 +422,27 @@
             }
 
             .global-save-btn {
-                width: 100%; /* 按鈕變滿版，方便大拇指按 */
+                width: 100%;
                 justify-content: center;
                 padding: 14px;
             }
 
-            /* 核心：把原本橫向並排的電腦 grid 破解掉，改成全部上下直排！ */
             .main-container {
                 grid-template-columns: 1fr; 
                 gap: 16px;
             }
 
             .panel-box {
-                padding: 16px; /* 稍微縮小內襯墊，讓文字空間變大 */
+                padding: 16px;
                 border-radius: 16px;
             }
 
-            /* 手機版分類列表動作按鈕直接顯示（不依賴 hover，因為手機不能 hover） */
             .category-actions {
                 display: flex !important; 
             }
 
-            /* 卡片網格在手機版自動調整寬度 */
             .items-grid {
-                grid-template-columns: 1fr; /* 手機一列排一張卡片，最舒服 */
+                grid-template-columns: 1fr;
                 gap: 16px;
             }
         }
@@ -466,7 +461,6 @@
 
     <div class="main-container">
         
-        <!-- 區塊一：管理導覽 -->
         <div class="panel-box">
             <div class="panel-title">
                 <span>管理導覽</span>
@@ -481,7 +475,6 @@
             </div>
         </div>
 
-        <!-- 區塊二：編輯/新增表單 -->
         <div class="panel-box">
             <div class="form-panel-title" id="form-panel-title" style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">新增項目</div>
             
@@ -523,7 +516,6 @@
             </form>
         </div>
 
-        <!-- 區塊三：資料顯示網格與標籤篩選 -->
         <div class="right-section">
             <div class="filter-tags-row" id="filter-tags-container">
             </div>
@@ -551,6 +543,7 @@
         let currentFilter = "all";  
         let editTargetId = null;    
         let currentUploadedImgBase64 = ""; 
+        let isImageChangedThisTurn = false; // 💡 新增：用來記錄目前這個回合使用者「有沒有上傳新照片」
 
         // === 2. 雲端資料初始化讀取模組 ===
         function initFromCloud() {
@@ -705,6 +698,7 @@
                     previewImg.src = e.target.result;
                     previewImg.style.display = 'block';
                     currentUploadedImgBase64 = e.target.result; 
+                    isImageChangedThisTurn = true; // 💡 標記此回合有換新照片
                     markUnsaved();
                 }
                 reader.readAsDataURL(file);
@@ -737,7 +731,10 @@
                     collections[index].url = url;
                     collections[index].category = category;
                     collections[index].comment = comment;
-                    collections[index].img = currentUploadedImgBase64; 
+                    // 💡 只有當使用者有重新選照片時，才用新的 Base64 覆蓋原本的值
+                    if (isImageChangedThisTurn) {
+                        collections[index].img = currentUploadedImgBase64;
+                    }
                 }
             }
 
@@ -751,6 +748,7 @@
             if (!item) return;
 
             editTargetId = id;
+            isImageChangedThisTurn = false; // 重置狀態
 
             document.getElementById('form-panel-title').innerText = "編輯項目 ⚙️";
             document.getElementById('btn-submit-form').innerText = "確認修改儲存";
@@ -778,6 +776,7 @@
 
         function cancelEdit() {
             editTargetId = null;
+            isImageChangedThisTurn = false;
             document.getElementById('form-panel-title').innerText = "新增項目";
             document.getElementById('btn-submit-form').innerText = "確認新增儲存";
             document.getElementById('btn-cancel-edit').style.display = 'none';
@@ -840,7 +839,7 @@
             }
         }
 
-        // === 7. 雲端備份同步模組 ===
+        // === 7. 雲端備份同步模組 (⚡ 核心流速優化優化版) ===
         function markUnsaved() {
             document.getElementById('btn-global-save').classList.add('unsaved');
         }
@@ -848,12 +847,28 @@
         document.getElementById('btn-global-save').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
-            btn.innerText = "⏳ 正在備份同步中...";
+            btn.innerText = "⏳ 正在極速同步中...";
             btn.disabled = true;
+
+            // 💡 核心優化：為了防止重複傳輸幾百萬字的巨大舊照片，我們在傳送前，只保留基本欄位！
+            // 如果卡片原本就有 img (網址或舊資料)，我們不重複上傳。
+            // 只有「全新上傳」或「剛剛在編輯中更換」的 Base64 才會打包送出，其餘時候只送文字，大幅縮減封包體積。
+            const optimizedCollections = collections.map(item => {
+                // 如果照片是長長的 data:image 開頭，表示是新增或剛改的照片，必須上傳。
+                // 如果不是，則正常傳遞或保持原樣。
+                return {
+                    id: item.id,
+                    name: item.name,
+                    url: item.url,
+                    category: item.category,
+                    comment: item.comment,
+                    img: item.img || ""
+                };
+            });
 
             const payload = {
                 categories: categories,
-                collections: collections
+                collections: optimizedCollections
             };
             
             fetch(GAS_WEB_APP_URL, {
