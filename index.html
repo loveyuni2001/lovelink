@@ -1,4 +1,4 @@
-<!DOCTYPE html>202606051234
+<!DOCTYPE html>202606051242
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -543,6 +543,7 @@
         let currentFilter = "all";  
         let editTargetId = null;    
         let currentUploadedImgBase64 = ""; 
+        let newlyUploadedIds = new Set(); // 💡 追蹤哪些卡片這回合有「重新上傳或新加照片」
 
         // === 2. 雲端資料初始化讀取模組 ===
         function initFromCloud() {
@@ -677,7 +678,7 @@
             renderSystem();
         }
 
-        // === 4. 圖片處理模組 (⚡ 內建自動智慧壓縮引擎) ===
+        // === 4. 圖片處理模組 ===
         const fileInput = document.getElementById('hidden-file-input');
         const statusText = document.getElementById('upload-status-text');
         const previewImg = document.getElementById('upload-preview');
@@ -690,17 +691,14 @@
         fileInput.addEventListener('change', function() {
             if (this.files && this.files[0]) {
                 const file = this.files[0];
-                statusText.innerText = "正在進行無損縮圖優化中...";
+                statusText.innerText = "正在進行優化壓縮...";
                 
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        // 🛠️ 建立一個隱藏的 Canvas 畫布來重新繪製縮圖
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-                        
-                        // 限制圖片最大寬度為 500 像素 (這在卡片上已經超級清晰了)
                         const maxW = 500;
                         let targetW = img.width;
                         let targetH = img.height;
@@ -714,13 +712,12 @@
                         canvas.height = targetH;
                         ctx.drawImage(img, 0, 0, targetW, targetH);
                         
-                        // ⚡ 以 0.7 壓縮品質輸出，檔案大小秒縮 90%，但肉眼看不出區別
                         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
                         
                         previewImg.src = compressedBase64;
                         previewImg.style.display = 'block';
                         currentUploadedImgBase64 = compressedBase64; 
-                        statusText.innerText = "⚡ 縮圖優化成功：" + file.name;
+                        statusText.innerText = "⚡ 圖片已壓縮成功";
                         markUnsaved();
                     };
                     img.src = e.target.result;
@@ -737,10 +734,11 @@
             const url = document.getElementById('item-url').value.trim();
             const category = document.getElementById('item-category').value;
             const comment = document.getElementById('item-comment').value.trim();
+            const targetId = editTargetId || ("item_" + Date.now());
 
             if (editTargetId === null) {
                 const newItem = {
-                    id: "item_" + Date.now(), 
+                    id: targetId, 
                     name: name,
                     url: url,
                     category: category,
@@ -748,6 +746,7 @@
                     img: currentUploadedImgBase64 
                 };
                 collections.unshift(newItem); 
+                if(currentUploadedImgBase64) newlyUploadedIds.add(targetId);
             } else {
                 const index = collections.findIndex(item => item.id === editTargetId);
                 if (index !== -1) {
@@ -755,7 +754,11 @@
                     collections[index].url = url;
                     collections[index].category = category;
                     collections[index].comment = comment;
-                    collections[index].img = currentUploadedImgBase64; 
+                    // 如果有上傳新圖才覆蓋
+                    if (currentUploadedImgBase64 !== collections[index].img) {
+                        collections[index].img = currentUploadedImgBase64;
+                        newlyUploadedIds.add(targetId);
+                    }
                 }
             }
 
@@ -812,24 +815,20 @@
         function deleteItem(id) {
             if(confirm("確定要刪除這個收藏項目嗎？")) {
                 collections = collections.filter(item => item.id !== id);
+                newlyUploadedIds.delete(id);
                 renderSystem();
                 markUnsaved();
             }
         }
 
-        // === 6. 左側分類功能 ===
+        // === 6. 分類功能 ===
         document.getElementById('btn-add-cat').addEventListener('click', function() {
             const input = document.getElementById('new-cat-input');
             const name = input.value.trim();
             if (!name) return;
 
             const newId = "cat_" + Date.now();
-            categories.push({
-                id: newId,
-                name: name,
-                icon: "fa-folder"
-            });
-
+            categories.push({ id: newId, name: name, icon: "fa-folder" });
             input.value = "";
             renderSystem();
             markUnsaved();
@@ -847,18 +846,16 @@
         }
 
         function deleteCategory(id) {
-            if(confirm("刪除分類不會刪除裡面的卡片。確定刪除此分類？")) {
+            if(confirm("確定刪除此分類？")) {
                 categories = categories.filter(c => c.id !== id);
-                collections.forEach(item => {
-                    if(item.category === id) item.category = "";
-                });
+                collections.forEach(item => { if(item.category === id) item.category = ""; });
                 if (currentFilter === id) currentFilter = "all";
                 renderSystem();
                 markUnsaved();
             }
         }
 
-        // === 7. 雲端備份同步模組 ===
+        // === 7. 雲端備份同步模組 (⚡ 終極輕量化傳輸) ===
         function markUnsaved() {
             document.getElementById('btn-global-save').classList.add('unsaved');
         }
@@ -866,12 +863,26 @@
         document.getElementById('btn-global-save').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
-            btn.innerText = "⏳ 正在同步備份至雲端...";
+            btn.innerText = "⏳ 正在秒級同步中...";
             btn.disabled = true;
+
+            // 💡 終極優化：只保留這次真正「新選取/新壓縮」的照片字串，其餘舊照片直接改傳空字串 ""！
+            // 逼迫 GAS 不要重複去寫入、去動那幾百萬字的格子！
+            const ultraLightCollections = collections.map(item => {
+                var isNew = newlyUploadedIds.has(item.id);
+                return {
+                    id: item.id,
+                    name: item.name,
+                    url: item.url,
+                    category: item.category,
+                    comment: item.comment,
+                    img: isNew ? item.img : "" 
+                };
+            });
 
             const payload = {
                 categories: categories,
-                collections: collections
+                collections: ultraLightCollections
             };
             
             fetch(GAS_WEB_APP_URL, {
@@ -885,7 +896,8 @@
                 btn.classList.remove('unsaved');
                 btn.innerHTML = originalText;
                 if (text === "Success") {
-                    alert('🎉 備份成功！未來的照片也已被自動優化，體驗會越來越順暢！');
+                    newlyUploadedIds.clear(); // 儲存成功，重置新照片清單
+                    alert('🎉 同步完畢！這次包裹體積極小，應該明顯感覺到速度提升了！');
                 } else {
                     alert('同步時發生問題：' + text);
                 }
@@ -894,7 +906,7 @@
                 btn.disabled = false;
                 btn.innerHTML = originalText;
                 console.error(err);
-                alert('連線失敗，請確認網路或 GAS 網址部署！');
+                alert('連線失敗！');
             });
         });
 
